@@ -20,6 +20,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { Combobox } from "@/components/ui/combobox";
+import { POPULAR_FORKS, POPULAR_SHOCKS } from "@/data/suspensionPresets";
 import type {
   Bike,
   BikeCategory,
@@ -793,9 +795,10 @@ export function BikeBuilderDialog({
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1">
                   <Label className="text-[11px] text-zinc-400">Fork Model</Label>
-                  <Input
+                  <Combobox
                     value={forkModel}
-                    onChange={(e) => setForkModel(e.target.value)}
+                    onChange={setForkModel}
+                    options={POPULAR_FORKS}
                     placeholder="e.g. Fox 38 Factory"
                     className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
                   />
@@ -825,9 +828,10 @@ export function BikeBuilderDialog({
                 {hasRearShock && (
                   <div className="space-y-1">
                     <Label className="text-[11px] text-zinc-400">Rear Shock</Label>
-                    <Input
+                    <Combobox
                       value={shockModel}
-                      onChange={(e) => setShockModel(e.target.value)}
+                      onChange={setShockModel}
+                      options={POPULAR_SHOCKS}
                       placeholder="e.g. Fox Float X2"
                       className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
                     />

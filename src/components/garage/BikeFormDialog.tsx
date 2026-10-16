@@ -18,6 +18,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Combobox } from "@/components/ui/combobox";
+import { POPULAR_FORKS, POPULAR_SHOCKS } from "@/data/suspensionPresets";
 import type { Bike, TireSetup, TireCasing } from "@/types/mountainBike";
 
 interface BikeFormDialogProps {
@@ -386,9 +388,10 @@ export function BikeFormDialog({
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1">
                 <Label className="text-[11px] text-slate-400">Fork Model</Label>
-                <Input
+                <Combobox
                   value={forkModel}
-                  onChange={(e) => setForkModel(e.target.value)}
+                  onChange={setForkModel}
+                  options={POPULAR_FORKS}
                   placeholder="e.g. Fox 38 Factory"
                   className="h-9 bg-slate-950 border-slate-800 text-base md:text-sm"
                 />
@@ -416,9 +419,10 @@ export function BikeFormDialog({
               {suspensionType === "Full Suspension" && (
                 <div className="space-y-1">
                   <Label className="text-[11px] text-slate-400">Rear Shock Model</Label>
-                  <Input
+                  <Combobox
                     value={shockModel}
-                    onChange={(e) => setShockModel(e.target.value)}
+                    onChange={setShockModel}
+                    options={POPULAR_SHOCKS}
                     placeholder="e.g. Fox Float X2"
                     className="h-9 bg-slate-950 border-slate-800 text-base md:text-sm"
                   />
