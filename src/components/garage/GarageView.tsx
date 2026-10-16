@@ -119,7 +119,7 @@ export function GarageView({
               {ownerName}&apos;s Garage
             </h1>
             <p className="text-xs text-zinc-400 mt-0.5">
-              {bikes.length} {bikes.length === 1 ? "bicycle" : "bicycles"} calibrated in hardware fleet
+              {bikes.length} {bikes.length === 1 ? "active setup" : "active setups"}
             </p>
           </div>
         </div>
@@ -170,7 +170,7 @@ export function GarageView({
                     )}
                   </div>
 
-                  {/* Center: Brand & Model, Year & Category badge */}
+                  {/* Center: Brand & Model, Year & Discipline badge */}
                   <div className="space-y-0.5 min-w-0">
                     <div className="flex items-center gap-2">
                       <h3 className="text-sm sm:text-base font-bold text-white truncate">
@@ -188,11 +188,6 @@ export function GarageView({
                       <span className="text-[10px] font-sans font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-300">
                         {(bike.discipline || bike.category || "mountain").replace("_", " ")}
                       </span>
-                      {bike.suspensionLayout && (
-                        <span className="text-[10px] font-sans font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400">
-                          {bike.suspensionLayout.replace("_", " ")}
-                        </span>
-                      )}
                       {bike.isEBike && (
                         <span className="text-[10px] font-sans font-semibold px-1.5 py-0.5 rounded bg-zinc-900 text-amber-300 flex items-center gap-1">
                           <Zap className="w-2.5 h-2.5 text-amber-400" />
