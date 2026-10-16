@@ -13,7 +13,8 @@ function calculateTireModifiers(
   tire: TireSetup,
   bike: Bike,
   condition: TrailCondition,
-  activeRidingStyle: RidingStyle
+  activeRidingStyle: RidingStyle,
+  temperature?: number
 ): ModifierItem[] {
   const mods: ModifierItem[] = [];
 
@@ -68,6 +69,15 @@ function calculateTireModifiers(
     });
   }
 
+  // 6. Cold Ambient Temperature Compensation (<10°C adds +1.0 PSI)
+  if (typeof temperature === "number" && temperature < 10) {
+    mods.push({
+      label: "Cold Air Density (<10°C)",
+      delta: 1.0,
+      description: `Added +1.0 PSI to compensate for cold air contraction and pressure loss at ${temperature}°C`,
+    });
+  }
+
   // Riding Style Dynamics
   if (activeRidingStyle === "aggressive_heavy") {
     mods.push({
@@ -90,7 +100,8 @@ export function useDialedMath(
   bike: Bike | undefined,
   profile: RiderProfile,
   condition: TrailCondition,
-  overrideStyle?: RidingStyle
+  overrideStyle?: RidingStyle,
+  temperature?: number
 ): SetupCalculationOutput {
   const activeRidingStyle = overrideStyle || profile.ridingStyle || "neutral";
 
@@ -146,13 +157,15 @@ export function useDialedMath(
       bike.frontTire,
       bike,
       condition,
-      activeRidingStyle
+      activeRidingStyle,
+      temperature
     );
     const rearModifiers = calculateTireModifiers(
       bike.rearTire,
       bike,
       condition,
-      activeRidingStyle
+      activeRidingStyle,
+      temperature
     );
 
     const frontTotalDelta = frontModifiers.reduce((acc, m) => acc + m.delta, 0);
@@ -218,5 +231,5 @@ export function useDialedMath(
       rearModifiers,
       suspensionNotes,
     };
-  }, [bike, profile.weight, activeRidingStyle, condition]);
+  }, [bike, profile.weight, activeRidingStyle, condition, temperature]);
 }

@@ -17,6 +17,7 @@ interface CalculationBreakdownDialogProps {
   profile: RiderProfile;
   initialTab?: "front" | "rear";
   setup: ReturnType<typeof useDialedMath>;
+  temperature?: number;
 }
 
 export function CalculationBreakdownDialog({
@@ -26,6 +27,7 @@ export function CalculationBreakdownDialog({
   profile,
   initialTab = "front",
   setup,
+  temperature,
 }: CalculationBreakdownDialogProps) {
   const [activeTab, setActiveTab] = useState<"front" | "rear">(initialTab);
 
@@ -123,8 +125,14 @@ export function CalculationBreakdownDialog({
             <span className="text-xs font-mono text-zinc-500 ml-1">
               ({barValue} bar)
             </span>
-            <span className="ml-auto text-[11px] text-zinc-400 font-sans">
-              Calibrated for <span className="font-mono font-bold text-zinc-200">{profile.weight} lbs</span>
+            <span className="ml-auto text-[11px] text-zinc-400 font-sans flex items-center gap-1.5">
+              <span><span className="font-mono font-bold text-zinc-200">{profile.weight} lbs</span></span>
+              {typeof temperature === "number" && (
+                <>
+                  <span>•</span>
+                  <span><span className="font-mono font-bold text-zinc-200">{temperature}°C</span></span>
+                </>
+              )}
             </span>
           </div>
         </div>

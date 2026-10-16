@@ -10,12 +10,21 @@ import {
   Flame,
   RotateCw,
   Calculator,
+  MapPin,
+  Clock,
+  Cloud,
 } from "lucide-react";
+import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Label } from "@/components/ui/label";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { useDialedMath } from "@/hooks/useDialedMath";
 import { CalculationBreakdownDialog } from "./CalculationBreakdownDialog";
+import {
+  RidePlanDrawer,
+  TIME_PRESETS,
+  type RideTimePlan,
+} from "./RidePlanDrawer";
 import type {
   Bike,
   RiderProfile,
@@ -68,8 +77,43 @@ export function RideSetupView({
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
   const [breakdownTab, setBreakdownTab] = useState<"front" | "rear">("front");
 
+  // Live Conditions & Forecasting State
+  const [selectedLocation, setSelectedLocation] = useState(
+    "Current Location (Squamish, BC)"
+  );
+  const [selectedTimePlan, setSelectedTimePlan] = useState<RideTimePlan>(
+    TIME_PRESETS[0]
+  );
+  const [isRidePlanOpen, setIsRidePlanOpen] = useState(false);
+  const [ridePlanTab, setRidePlanTab] = useState<"location" | "time">("time");
+  const [autoWetNote, setAutoWetNote] = useState<string | null>(null);
+
   const currentBike = bikes.find((b) => b.id === activeBikeId) || bikes[0];
-  const setup = useDialedMath(currentBike, profile, condition, rideStyle);
+  const setup = useDialedMath(
+    currentBike,
+    profile,
+    condition,
+    rideStyle,
+    selectedTimePlan.temperature
+  );
+
+  const handleSelectTimePlan = (plan: RideTimePlan, willAutoSetWet: boolean) => {
+    setSelectedTimePlan(plan);
+    if (willAutoSetWet) {
+      setCondition("wet_slippery");
+      setAutoWetNote("Surface condition auto-set to WET based on forecasted rain");
+      toast.info("Surface condition auto-set to WET based on forecasted rain");
+    } else {
+      setAutoWetNote(null);
+    }
+  };
+
+  const handleConditionSelect = (newCond: TrailCondition) => {
+    setCondition(newCond);
+    if (autoWetNote && newCond !== "wet_slippery") {
+      setAutoWetNote(null);
+    }
+  };
 
   if (!currentBike) {
     return (
@@ -97,7 +141,7 @@ export function RideSetupView({
 
   return (
     <div className="space-y-8 pb-12">
-      {/* 1. Active Context & Pre-Ride Configuration (Borderless Section) */}
+      {/* 1. Active Context & Live Conditions (Borderless Section) */}
       <section className="pb-8 border-b border-zinc-800/50">
         <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3">
           <div className="space-y-1">
@@ -119,6 +163,66 @@ export function RideSetupView({
             <span className="px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-[11px] font-medium text-zinc-300 capitalize">
               {currentBike.category.replace("_", " ")}
             </span>
+          </div>
+        </div>
+
+        {/* Live Conditions & Forecasting Module (Compact, Borderless, Geist Sans) */}
+        <div className="mt-4 pt-3 border-t border-zinc-800/40 space-y-1.5 font-sans">
+          <div className="flex items-center gap-3 flex-wrap text-xs">
+            {/* Location Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setRidePlanTab("location");
+                setIsRidePlanOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors group cursor-pointer"
+            >
+              <MapPin className="w-3.5 h-3.5 text-lime-400 shrink-0" />
+              <span className="font-medium underline-offset-4 group-hover:underline">
+                {selectedLocation}
+              </span>
+            </button>
+
+            <span className="text-zinc-700">•</span>
+
+            {/* Time of Ride Button */}
+            <button
+              type="button"
+              onClick={() => {
+                setRidePlanTab("time");
+                setIsRidePlanOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors group cursor-pointer"
+            >
+              <Clock className="w-3.5 h-3.5 text-lime-400 shrink-0" />
+              <span className="font-medium underline-offset-4 group-hover:underline">
+                {selectedTimePlan.label}
+              </span>
+            </button>
+          </div>
+
+          {/* Forecasted Weather Readout */}
+          <div className="flex items-center gap-2 text-xs text-zinc-400 flex-wrap">
+            {selectedTimePlan.weatherIcon === "rain" ? (
+              <CloudRain className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+            ) : selectedTimePlan.weatherIcon === "sun" ? (
+              <Sun className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+            ) : (
+              <Cloud className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+            )}
+            <span>
+              <span className="font-mono text-zinc-200 font-semibold">
+                {selectedTimePlan.temperature}°C
+              </span>{" "}
+              • {selectedTimePlan.weatherDescription} •{" "}
+              <span className="font-mono">{selectedTimePlan.pop}%</span> POP
+            </span>
+            {selectedTimePlan.temperature < 10 && (
+              <span className="text-[10px] font-sans font-semibold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                Cold Air +1.0 PSI
+              </span>
+            )}
           </div>
         </div>
 
@@ -147,6 +251,14 @@ export function RideSetupView({
               })()}
             </div>
 
+            {/* Simulated Live Weather Auto-Toggle Inline Note */}
+            {autoWetNote && (
+              <div className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-300 text-[11px] font-sans">
+                <CloudRain className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                <span className="font-medium">{autoWetNote}</span>
+              </div>
+            )}
+
             <div className="relative grid grid-cols-4 gap-1 p-1 bg-zinc-900 rounded-xl">
               {TRAIL_CONDITIONS.map((cond) => {
                 const isSelected = condition === cond.id;
@@ -156,7 +268,7 @@ export function RideSetupView({
                   <button
                     key={cond.id}
                     type="button"
-                    onClick={() => setCondition(cond.id)}
+                    onClick={() => handleConditionSelect(cond.id)}
                     className={`relative z-10 py-2 px-1 text-xs font-sans font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-colors ${
                       isSelected
                         ? "text-white"
@@ -595,6 +707,23 @@ export function RideSetupView({
         profile={profile}
         initialTab={breakdownTab}
         setup={setup}
+        temperature={selectedTimePlan.temperature}
+      />
+
+      {/* Live Conditions & Ride Plan Drawer */}
+      <RidePlanDrawer
+        open={isRidePlanOpen}
+        onOpenChange={setIsRidePlanOpen}
+        initialTab={ridePlanTab}
+        selectedLocation={selectedLocation}
+        onSelectLocation={(loc) => {
+          setSelectedLocation(loc);
+          setIsRidePlanOpen(false);
+        }}
+        selectedTimePlan={selectedTimePlan}
+        onSelectTimePlan={(plan, autoSetWet) => {
+          handleSelectTimePlan(plan, autoSetWet);
+        }}
       />
     </div>
   );
