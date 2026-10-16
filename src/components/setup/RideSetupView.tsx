@@ -513,15 +513,7 @@ export function RideSetupView({
               </div>
             )}
 
-            <div
-              className="relative flex items-center overflow-x-auto gap-2 no-scrollbar px-1 py-1 pr-8 bg-zinc-900 rounded-xl w-full"
-              style={{
-                maskImage:
-                  "linear-gradient(to right, black 85%, transparent 100%)",
-                WebkitMaskImage:
-                  "linear-gradient(to right, black 85%, transparent 100%)",
-              }}
-            >
+            <div className="flex flex-wrap gap-2 pt-1">
               {surfacePresets.map((cond) => {
                 const isSelected = condition === cond.id;
                 const Icon = cond.icon;
@@ -531,26 +523,24 @@ export function RideSetupView({
                     key={cond.id}
                     type="button"
                     onClick={() => handleConditionSelect(cond.id)}
-                    className={`relative z-10 shrink-0 whitespace-nowrap py-2 px-3 text-xs font-sans font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-colors ${
+                    className={`relative z-10 w-auto py-2 px-3 text-xs font-sans font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-colors border ${
                       isSelected
-                        ? "text-white"
-                        : "text-zinc-400 hover:text-zinc-200"
+                        ? "text-white border-transparent"
+                        : "text-zinc-400 hover:text-zinc-200 bg-zinc-900 hover:bg-zinc-800/80 border-zinc-800/80"
                     }`}
                   >
                     {isSelected && (
                       <motion.div
                         layoutId={`active-condition-pill-${bikeDiscipline}`}
-                        className="absolute inset-0 bg-zinc-800 rounded-lg shadow-sm -z-10"
+                        className="absolute inset-0 bg-zinc-800 rounded-lg shadow-sm -z-10 border border-zinc-700/60"
                         transition={{ type: "spring", stiffness: 450, damping: 32 }}
                       />
                     )}
                     <Icon className="w-3.5 h-3.5 shrink-0" />
-                    <span className="shrink-0 whitespace-nowrap">{cond.label}</span>
+                    <span>{cond.label}</span>
                   </button>
                 );
               })}
-              {/* Scroll End-Padding Spacer */}
-              <div className="shrink-0 w-6 h-1 pointer-events-none" aria-hidden="true" />
             </div>
           </div>
 
