@@ -178,7 +178,10 @@ export function RideSetupView({
     let isCancelled = false;
 
     const autoLocateAndFetch = async () => {
-      setIsLocating(true);
+      const hasCachedLocation = !!localStorage.getItem("dialed_last_location_name");
+      if (!hasCachedLocation) {
+        setIsLocating(true);
+      }
       setLocationError(null);
       try {
         const pos = await getCurrentPosition();
@@ -190,17 +193,17 @@ export function RideSetupView({
         setCurrentCoords(coords);
         setIsDeviceLocation(true);
 
-        // Reverse geocode to resolve human-readable city name
-        const cityName = await reverseGeocode(pos.latitude, pos.longitude);
+        // Reverse geocode to resolve city name and fetch live weather concurrently
+        const [cityName] = await Promise.all([
+          reverseGeocode(pos.latitude, pos.longitude),
+          loadWeatherForCoords(coords),
+        ]);
         if (isCancelled) return;
         setSelectedLocation(cityName);
         try {
           localStorage.setItem("dialed_last_location_name", cityName);
           localStorage.setItem("dialed_last_coords", JSON.stringify(coords));
         } catch {}
-
-        // Fetch live weather telemetry for device coordinates
-        await loadWeatherForCoords(coords);
       } catch (err: any) {
         if (isCancelled) return;
         console.warn("Auto-location failed or permission denied on mount:", err);
@@ -250,14 +253,16 @@ export function RideSetupView({
       setCurrentCoords(coords);
       setIsDeviceLocation(true);
 
-      const cityName = await reverseGeocode(pos.latitude, pos.longitude);
+      const [cityName] = await Promise.all([
+        reverseGeocode(pos.latitude, pos.longitude),
+        loadWeatherForCoords(coords),
+      ]);
       setSelectedLocation(cityName);
       try {
         localStorage.setItem("dialed_last_location_name", cityName);
         localStorage.setItem("dialed_last_coords", JSON.stringify(coords));
       } catch {}
       toast.success(`Location detected: ${cityName}`);
-      await loadWeatherForCoords(coords);
     } catch (err: any) {
       console.warn("Geolocation acquisition failed:", err);
       if (err?.code === 1) {

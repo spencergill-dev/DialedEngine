@@ -134,7 +134,7 @@ export function mapWeatherCode(code: number): {
 /**
  * Retrieve user's current coordinates via HTML5 Geolocation API
  */
-export function getCurrentPosition(): Promise<{ latitude: number; longitude: number }> {
+export function getCurrentPosition(options?: PositionOptions): Promise<{ latitude: number; longitude: number }> {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
       reject(new Error("Geolocation is not supported by your browser"));
@@ -148,33 +148,30 @@ export function getCurrentPosition(): Promise<{ latitude: number; longitude: num
           longitude: pos.coords.longitude,
         });
       },
-      (highAccErr) => {
-        // If high accuracy times out or is unavailable (common on desktop/Mac without hardware GPS), retry with standard accuracy
-        if (highAccErr.code === 3 || highAccErr.code === 2) {
-          navigator.geolocation.getCurrentPosition(
-            (pos) => {
-              resolve({
-                latitude: pos.coords.latitude,
-                longitude: pos.coords.longitude,
-              });
-            },
-            (lowAccErr) => {
-              reject(lowAccErr);
-            },
-            {
-              enableHighAccuracy: false,
-              timeout: 8000,
-              maximumAge: 600000,
-            }
-          );
-        } else {
-          reject(highAccErr);
-        }
+      (_err) => {
+        // If initial standard accuracy fails or times out, retry once with relaxed parameters
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            resolve({
+              latitude: pos.coords.latitude,
+              longitude: pos.coords.longitude,
+            });
+          },
+          (finalErr) => {
+            reject(finalErr);
+          },
+          {
+            enableHighAccuracy: false,
+            timeout: 5000,
+            maximumAge: 600000,
+          }
+        );
       },
       {
-        enableHighAccuracy: true,
-        timeout: 5000,
+        enableHighAccuracy: false, // Fast resolution via WiFi / IP / Cellular (50-150ms)
+        timeout: 4000,
         maximumAge: 300000, // 5 minutes cache
+        ...options,
       }
     );
   });
