@@ -7,6 +7,7 @@ import {
   CloudSnow,
   Waves,
   Compass,
+  TreePine,
 } from "lucide-react";
 import type { BikeDiscipline, TrailCondition } from "@/types/cycling";
 
@@ -36,10 +37,11 @@ export const DISCIPLINE_SURFACE_PRESETS: Record<
     { id: "fat_mud", label: "Mud", icon: CloudRain, offset: "-1.5 PSI" },
   ],
   gravel: [
-    { id: "hardpack_pavement", label: "Pavement / Hardpack", icon: Compass, offset: "+2.0 PSI" },
-    { id: "packed_gravel", label: "Packed Gravel", icon: Sun, offset: "0.0 PSI" },
-    { id: "loose_chunky", label: "Loose / Chunky", icon: Mountain, offset: "-2.0 PSI" },
-    { id: "wet_mud", label: "Wet / Mud", icon: CloudRain, offset: "-2.5 PSI" },
+    { id: "gravel_hardpack", label: "Hardpack", icon: Compass, offset: "+1.5 PSI" },
+    { id: "deep_gravel", label: "Deep Gravel", icon: Mountain, offset: "-2.0 PSI" },
+    { id: "gravel_wet", label: "Wet", icon: CloudRain, offset: "-2.5 PSI" },
+    { id: "singletrack", label: "Singletrack", icon: TreePine, offset: "-1.5 PSI" },
+    { id: "snow_ice", label: "Snow / Ice", icon: Snowflake, offset: "-2.0 PSI" },
   ],
   road: [
     { id: "smooth_asphalt", label: "Pristine", icon: Sun, offset: "+3.0 PSI" },

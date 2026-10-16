@@ -74,6 +74,11 @@ export type SurfaceCondition =
   | "sand"
   | "fat_mud"
   // Gravel
+  | "gravel_hardpack"
+  | "deep_gravel"
+  | "gravel_wet"
+  | "singletrack"
+  | "gravel_singletrack"
   | "hardpack_pavement"
   | "packed_gravel"
   | "loose_chunky"

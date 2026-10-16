@@ -70,14 +70,6 @@ export function RideSetupView({
   onSwitchToGarage,
   onUpdateBike,
 }: RideSetupViewProps) {
-  const [condition, setCondition] = useState<TrailCondition>("loam_dirt");
-  const [rideStyle, setRideStyle] = useState<RidingStyle>(
-    profile.ridingStyle || "neutral"
-  );
-  const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
-  const [breakdownTab, setBreakdownTab] = useState<"front" | "rear">("front");
-  const [isEditBikeOpen, setIsEditBikeOpen] = useState(false);
-
   const currentBike = bikes.find((b) => b.id === activeBikeId) || bikes[0];
 
   const bikeDiscipline: BikeDiscipline =
@@ -95,6 +87,16 @@ export function RideSetupView({
   const surfacePresets =
     DISCIPLINE_SURFACE_PRESETS[bikeDiscipline] ||
     DISCIPLINE_SURFACE_PRESETS.mountain;
+
+  const [condition, setCondition] = useState<TrailCondition>(
+    () => surfacePresets[0]?.id || "dry_hardpack"
+  );
+  const [rideStyle, setRideStyle] = useState<RidingStyle>(
+    profile.ridingStyle || "neutral"
+  );
+  const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
+  const [breakdownTab, setBreakdownTab] = useState<"front" | "rear">("front");
+  const [isEditBikeOpen, setIsEditBikeOpen] = useState(false);
 
   // Live Conditions & Forecasting State
   const [selectedLocation, setSelectedLocation] = useState<string>("Locating...");
@@ -247,13 +249,20 @@ export function RideSetupView({
     }
   };
 
-  // Sync condition if active bike discipline changes
+  // FIX THE GHOST STATE (Active Condition Reset):
+  // Watches activeBike.discipline. If the currently saved surfaceCondition state string
+  // is NOT present in the newly selected discipline's array, automatically reset the
+  // surfaceCondition state to the 1st index ([0]) of the new array.
   useEffect(() => {
-    const exists = surfacePresets.some((p) => p.id === condition);
-    if (!exists && surfacePresets.length > 0) {
-      setCondition(surfacePresets[0].id);
+    const disciplinePresets =
+      DISCIPLINE_SURFACE_PRESETS[bikeDiscipline] ||
+      DISCIPLINE_SURFACE_PRESETS.mountain;
+
+    const isConditionInDiscipline = disciplinePresets.some((p) => p.id === condition);
+    if (!isConditionInDiscipline && disciplinePresets.length > 0) {
+      setCondition(disciplinePresets[0].id);
     }
-  }, [bikeDiscipline, surfacePresets, condition]);
+  }, [currentBike?.discipline, bikeDiscipline, condition]);
 
   const setup = useDialedMath(
     currentBike,
@@ -447,7 +456,7 @@ export function RideSetupView({
         {/* Pre-Ride Inputs: Surface Conditions & Ride Intensity (2-Column Grid) */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-6">
           {/* Surface Conditions (Framer Motion Sliding Segment Pill) */}
-          <div className="space-y-2">
+          <div className="space-y-2 min-w-0">
             <div className="flex items-center justify-between">
               <Label className="text-[11px] font-sans font-semibold uppercase tracking-wider text-zinc-400">
                 Surface Conditions
@@ -477,7 +486,7 @@ export function RideSetupView({
               </div>
             )}
 
-            <div className="relative flex items-center overflow-x-auto gap-2 no-scrollbar px-1 py-1 bg-zinc-900 rounded-xl">
+            <div className="relative flex items-center overflow-x-auto gap-2 no-scrollbar px-1 py-1 bg-zinc-900 rounded-xl w-full">
               {surfacePresets.map((cond) => {
                 const isSelected = condition === cond.id;
                 const Icon = cond.icon;
@@ -495,13 +504,13 @@ export function RideSetupView({
                   >
                     {isSelected && (
                       <motion.div
-                        layoutId="active-condition-pill"
+                        layoutId={`active-condition-pill-${bikeDiscipline}`}
                         className="absolute inset-0 bg-zinc-800 rounded-lg shadow-sm -z-10"
                         transition={{ type: "spring", stiffness: 450, damping: 32 }}
                       />
                     )}
                     <Icon className="w-3.5 h-3.5 shrink-0" />
-                    <span>{cond.label}</span>
+                    <span className="shrink-0 whitespace-nowrap">{cond.label}</span>
                   </button>
                 );
               })}

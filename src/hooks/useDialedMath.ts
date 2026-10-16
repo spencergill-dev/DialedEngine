@@ -109,17 +109,35 @@ function calculateTireModifiers(
       });
       break;
     case "hardpack_pavement":
+    case "gravel_hardpack":
       mods.push({
-        label: "Pavement / Hardpack",
-        delta: 2.0,
-        description: "Added +2.0 PSI for fast rolling efficiency on smooth tarmac",
+        label: "Hardpack",
+        delta: 1.5,
+        description: "Added +1.5 PSI for fast rolling efficiency on hardpack terrain",
       });
       break;
+    case "deep_gravel":
     case "loose_chunky":
+    case "packed_gravel":
       mods.push({
-        label: "Loose / Chunky",
+        label: "Deep Gravel",
         delta: -2.0,
-        description: "Dropped 2.0 PSI to reduce tire deflection over loose rocks",
+        description: "Dropped 2.0 PSI to reduce tire deflection and float over loose, deep gravel",
+      });
+      break;
+    case "gravel_wet":
+      mods.push({
+        label: "Wet Surface",
+        delta: -2.5,
+        description: "Dropped 2.5 PSI for wet gravel grip and cornering confidence",
+      });
+      break;
+    case "singletrack":
+    case "gravel_singletrack":
+      mods.push({
+        label: "Singletrack",
+        delta: -1.5,
+        description: "Dropped 1.5 PSI for supple root compliance and trail traction",
       });
       break;
     case "smooth_asphalt":
