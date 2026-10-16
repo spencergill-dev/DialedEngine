@@ -148,12 +148,32 @@ export function getCurrentPosition(): Promise<{ latitude: number; longitude: num
           longitude: pos.coords.longitude,
         });
       },
-      (err) => {
-        reject(err);
+      (highAccErr) => {
+        // If high accuracy times out or is unavailable (common on desktop/Mac without hardware GPS), retry with standard accuracy
+        if (highAccErr.code === 3 || highAccErr.code === 2) {
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              resolve({
+                latitude: pos.coords.latitude,
+                longitude: pos.coords.longitude,
+              });
+            },
+            (lowAccErr) => {
+              reject(lowAccErr);
+            },
+            {
+              enableHighAccuracy: false,
+              timeout: 8000,
+              maximumAge: 600000,
+            }
+          );
+        } else {
+          reject(highAccErr);
+        }
       },
       {
         enableHighAccuracy: true,
-        timeout: 10000,
+        timeout: 5000,
         maximumAge: 300000, // 5 minutes cache
       }
     );
@@ -161,13 +181,13 @@ export function getCurrentPosition(): Promise<{ latitude: number; longitude: num
 }
 
 /**
- * Reverse geocode latitude and longitude to a human-readable city name using BigDataCloud's free keyless API
+ * Reverse geocode latitude and longitude to a human-readable city name using BigDataCloud's direct keyless API
  */
 export async function reverseGeocode(
   latitude: number,
   longitude: number
 ): Promise<string> {
-  const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`;
+  const url = `https://api-bdc.io/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`;
   try {
     const res = await fetch(url);
     if (!res.ok) {

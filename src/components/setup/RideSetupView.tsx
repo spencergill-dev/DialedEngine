@@ -100,10 +100,18 @@ export function RideSetupView({
   const [isEditBikeOpen, setIsEditBikeOpen] = useState(false);
 
   // Live Conditions & Forecasting State
-  const [selectedLocation, setSelectedLocation] = useState<string>("Locating...");
-  const [_currentCoords, setCurrentCoords] = useState<LocationCoordinates>({
-    latitude: PRESET_TRAIL_LOCATIONS[0].latitude,
-    longitude: PRESET_TRAIL_LOCATIONS[0].longitude,
+  const [selectedLocation, setSelectedLocation] = useState<string>(() => {
+    return localStorage.getItem("dialed_last_location_name") || "Locating...";
+  });
+  const [_currentCoords, setCurrentCoords] = useState<LocationCoordinates>(() => {
+    try {
+      const saved = localStorage.getItem("dialed_last_coords");
+      if (saved) return JSON.parse(saved);
+    } catch {}
+    return {
+      latitude: PRESET_TRAIL_LOCATIONS[0].latitude,
+      longitude: PRESET_TRAIL_LOCATIONS[0].longitude,
+    };
   });
   const [isDeviceLocation, setIsDeviceLocation] = useState<boolean>(true);
   const [timePresets, setTimePresets] = useState<RideTimePlan[]>(TIME_PRESETS);
@@ -114,7 +122,9 @@ export function RideSetupView({
   const [ridePlanTab, setRidePlanTab] = useState<"location" | "time">("time");
   const [autoWetNote, setAutoWetNote] = useState<string | null>(null);
   const [isLoadingWeather, setIsLoadingWeather] = useState(false);
-  const [isLocating, setIsLocating] = useState(true);
+  const [isLocating, setIsLocating] = useState<boolean>(() => {
+    return !localStorage.getItem("dialed_last_location_name");
+  });
   const [locationError, setLocationError] = useState<string | null>(null);
 
   const loadWeatherForCoords = useCallback(
@@ -184,24 +194,36 @@ export function RideSetupView({
         const cityName = await reverseGeocode(pos.latitude, pos.longitude);
         if (isCancelled) return;
         setSelectedLocation(cityName);
+        try {
+          localStorage.setItem("dialed_last_location_name", cityName);
+          localStorage.setItem("dialed_last_coords", JSON.stringify(coords));
+        } catch {}
 
         // Fetch live weather telemetry for device coordinates
         await loadWeatherForCoords(coords);
       } catch (err: any) {
         if (isCancelled) return;
         console.warn("Auto-location failed or permission denied on mount:", err);
-        setSelectedLocation("Set Location");
-        setIsDeviceLocation(false);
+        const cachedLocation = localStorage.getItem("dialed_last_location_name");
+        if (!cachedLocation) {
+          setSelectedLocation("Set Location");
+          setIsDeviceLocation(false);
+        }
         if (err?.code === 1) {
           setLocationError("Location permission denied. Please allow location access or choose a trail center.");
         } else {
           setLocationError("Location access unavailable. Tap to choose your location.");
         }
         // Load fallback trail weather so math engine has valid base temperature
-        await loadWeatherForCoords({
+        let fallbackCoords = {
           latitude: PRESET_TRAIL_LOCATIONS[0].latitude,
           longitude: PRESET_TRAIL_LOCATIONS[0].longitude,
-        });
+        };
+        try {
+          const savedCoords = localStorage.getItem("dialed_last_coords");
+          if (savedCoords) fallbackCoords = JSON.parse(savedCoords);
+        } catch {}
+        await loadWeatherForCoords(fallbackCoords);
       } finally {
         if (!isCancelled) {
           setIsLocating(false);
@@ -230,6 +252,10 @@ export function RideSetupView({
 
       const cityName = await reverseGeocode(pos.latitude, pos.longitude);
       setSelectedLocation(cityName);
+      try {
+        localStorage.setItem("dialed_last_location_name", cityName);
+        localStorage.setItem("dialed_last_coords", JSON.stringify(coords));
+      } catch {}
       toast.success(`Location detected: ${cityName}`);
       await loadWeatherForCoords(coords);
     } catch (err: any) {
@@ -978,6 +1004,10 @@ export function RideSetupView({
           setSelectedLocation(loc);
           setCurrentCoords(coords);
           setIsDeviceLocation(false);
+          try {
+            localStorage.setItem("dialed_last_location_name", loc);
+            localStorage.setItem("dialed_last_coords", JSON.stringify(coords));
+          } catch {}
           loadWeatherForCoords(coords);
           setIsRidePlanOpen(false);
           toast.success(`Location calibrated: ${loc}`);
