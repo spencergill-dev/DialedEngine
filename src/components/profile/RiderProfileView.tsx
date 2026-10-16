@@ -138,7 +138,7 @@ export function RiderProfileView({
                   onChange={(e) =>
                     onUpdateProfile({ weight: Number(e.target.value) || 160 })
                   }
-                  className="w-24 h-9 text-right font-mono text-sm bg-slate-950 border-slate-800"
+                  className="w-24 h-9 text-right font-mono text-base md:text-sm bg-slate-950 border-slate-800"
                 />
                 <span className="text-xs text-slate-400 font-mono">LBS</span>
               </div>

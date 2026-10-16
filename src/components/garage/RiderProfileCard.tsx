@@ -64,7 +64,7 @@ export function RiderProfileCard({ profile, onUpdate }: RiderProfileCardProps) {
                   onChange={(e) =>
                     onUpdate({ baseWeight: Number(e.target.value) || 160 })
                   }
-                  className="w-20 h-8 text-right font-mono text-xs bg-slate-950 border-slate-800"
+                  className="w-20 h-8 text-right font-mono text-base md:text-sm bg-slate-950 border-slate-800"
                 />
                 <span className="text-xs text-slate-400 font-mono">LBS</span>
               </div>
@@ -104,7 +104,7 @@ export function RiderProfileCard({ profile, onUpdate }: RiderProfileCardProps) {
                   onChange={(e) =>
                     onUpdate({ gearWeight: Number(e.target.value) || 0 })
                   }
-                  className="w-20 h-8 text-right font-mono text-xs bg-slate-950 border-slate-800"
+                  className="w-20 h-8 text-right font-mono text-base md:text-sm bg-slate-950 border-slate-800"
                 />
                 <span className="text-xs text-slate-400 font-mono">LBS</span>
               </div>

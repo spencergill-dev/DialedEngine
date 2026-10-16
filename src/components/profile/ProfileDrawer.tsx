@@ -293,7 +293,7 @@ export function ProfileDrawer({
                     max={280}
                     value={weight}
                     onChange={(e) => setWeight(Number(e.target.value) || 160)}
-                    className="w-20 h-8 text-right font-mono text-xs bg-zinc-900 border-none ring-1 ring-white/10"
+                    className="w-20 h-8 text-right font-mono text-base md:text-sm bg-zinc-900 border-none ring-1 ring-white/10"
                   />
                 </div>
                 <Slider

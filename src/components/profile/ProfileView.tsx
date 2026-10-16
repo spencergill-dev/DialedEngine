@@ -331,7 +331,7 @@ export function ProfileView({
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
                 placeholder="e.g. Spencer"
-                className="h-10 bg-zinc-900 border-none ring-1 ring-white/10 focus-visible:ring-lime-400 text-sm"
+                className="h-10 bg-zinc-900 border-none ring-1 ring-white/10 focus-visible:ring-lime-400 text-base md:text-sm"
               />
               <p className="text-[11px] text-zinc-400 font-sans">
                 Used in garage titles, header greetings, and bike recommendations
@@ -382,7 +382,7 @@ export function ProfileView({
                     max={280}
                     value={weight}
                     onChange={(e) => setWeight(Number(e.target.value) || 160)}
-                    className="w-20 h-9 text-right font-mono text-sm font-bold bg-zinc-900 border-none ring-1 ring-white/10"
+                    className="w-20 h-9 text-right font-mono text-base md:text-sm font-bold bg-zinc-900 border-none ring-1 ring-white/10"
                   />
                   <span className="text-xs font-sans font-bold text-zinc-400">LBS</span>
                 </div>

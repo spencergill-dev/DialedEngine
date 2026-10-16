@@ -192,12 +192,12 @@ export function BikeFormDialog({
                     setFrontTire((prev) => ({ ...prev, manufacturer: val }))
                   }
                 >
-                  <SelectTrigger className="h-9 bg-slate-950 border-slate-800 text-xs">
+                  <SelectTrigger className="h-9 bg-slate-950 border-slate-800 text-base md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-900 border-slate-800">
                     {TIRE_MANUFACTURERS.map((m) => (
-                      <SelectItem key={m} value={m} className="text-xs">
+                      <SelectItem key={m} value={m} className="text-base md:text-sm">
                         {m}
                       </SelectItem>
                     ))}
@@ -213,7 +213,7 @@ export function BikeFormDialog({
                     setFrontTire((prev) => ({ ...prev, model: e.target.value }))
                   }
                   placeholder="e.g. Assegai"
-                  className="h-9 bg-slate-950 border-slate-800 text-xs"
+                  className="h-9 bg-slate-950 border-slate-800 text-base md:text-sm"
                 />
               </div>
 
@@ -225,12 +225,12 @@ export function BikeFormDialog({
                     setFrontTire((prev) => ({ ...prev, width: val }))
                   }
                 >
-                  <SelectTrigger className="h-9 bg-slate-950 border-slate-800 text-xs">
+                  <SelectTrigger className="h-9 bg-slate-950 border-slate-800 text-base md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-900 border-slate-800">
                     {TIRE_WIDTHS.map((w) => (
-                      <SelectItem key={w} value={w} className="text-xs">
+                      <SelectItem key={w} value={w} className="text-base md:text-sm">
                         {w}
                       </SelectItem>
                     ))}
@@ -246,17 +246,17 @@ export function BikeFormDialog({
                     setFrontTire((prev) => ({ ...prev, casing: val }))
                   }
                 >
-                  <SelectTrigger className="h-9 bg-slate-950 border-slate-800 text-xs">
+                  <SelectTrigger className="h-9 bg-slate-950 border-slate-800 text-base md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-900 border-slate-800">
-                    <SelectItem value="light" className="text-xs">
+                    <SelectItem value="light" className="text-base md:text-sm">
                       Light (EXO / Trail)
                     </SelectItem>
-                    <SelectItem value="standard" className="text-xs">
+                    <SelectItem value="standard" className="text-base md:text-sm">
                       Standard (EXO+ / Enduro)
                     </SelectItem>
-                    <SelectItem value="heavy" className="text-xs">
+                    <SelectItem value="heavy" className="text-base md:text-sm">
                       Heavy / DH (DoubleDown)
                     </SelectItem>
                   </SelectContent>
@@ -292,12 +292,12 @@ export function BikeFormDialog({
                     setRearTire((prev) => ({ ...prev, manufacturer: val }))
                   }
                 >
-                  <SelectTrigger className="h-9 bg-slate-950 border-slate-800 text-xs">
+                  <SelectTrigger className="h-9 bg-slate-950 border-slate-800 text-base md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-900 border-slate-800">
                     {TIRE_MANUFACTURERS.map((m) => (
-                      <SelectItem key={m} value={m} className="text-xs">
+                      <SelectItem key={m} value={m} className="text-base md:text-sm">
                         {m}
                       </SelectItem>
                     ))}
@@ -313,7 +313,7 @@ export function BikeFormDialog({
                     setRearTire((prev) => ({ ...prev, model: e.target.value }))
                   }
                   placeholder="e.g. Minion DHR II"
-                  className="h-9 bg-slate-950 border-slate-800 text-xs"
+                  className="h-9 bg-slate-950 border-slate-800 text-base md:text-sm"
                 />
               </div>
 
@@ -325,12 +325,12 @@ export function BikeFormDialog({
                     setRearTire((prev) => ({ ...prev, width: val }))
                   }
                 >
-                  <SelectTrigger className="h-9 bg-slate-950 border-slate-800 text-xs">
+                  <SelectTrigger className="h-9 bg-slate-950 border-slate-800 text-base md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-900 border-slate-800">
                     {TIRE_WIDTHS.map((w) => (
-                      <SelectItem key={w} value={w} className="text-xs">
+                      <SelectItem key={w} value={w} className="text-base md:text-sm">
                         {w}
                       </SelectItem>
                     ))}
@@ -346,17 +346,17 @@ export function BikeFormDialog({
                     setRearTire((prev) => ({ ...prev, casing: val }))
                   }
                 >
-                  <SelectTrigger className="h-9 bg-slate-950 border-slate-800 text-xs">
+                  <SelectTrigger className="h-9 bg-slate-950 border-slate-800 text-base md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-900 border-slate-800">
-                    <SelectItem value="light" className="text-xs">
+                    <SelectItem value="light" className="text-base md:text-sm">
                       Light (EXO / Trail)
                     </SelectItem>
-                    <SelectItem value="standard" className="text-xs">
+                    <SelectItem value="standard" className="text-base md:text-sm">
                       Standard (EXO+ / Enduro)
                     </SelectItem>
-                    <SelectItem value="heavy" className="text-xs">
+                    <SelectItem value="heavy" className="text-base md:text-sm">
                       Heavy / DH (DoubleDown)
                     </SelectItem>
                   </SelectContent>
@@ -390,7 +390,7 @@ export function BikeFormDialog({
                   value={forkModel}
                   onChange={(e) => setForkModel(e.target.value)}
                   placeholder="e.g. Fox 38 Factory"
-                  className="h-9 bg-slate-950 border-slate-800 text-xs"
+                  className="h-9 bg-slate-950 border-slate-800 text-base md:text-sm"
                 />
               </div>
 
@@ -400,12 +400,12 @@ export function BikeFormDialog({
                   value={String(forkTravel)}
                   onValueChange={(val) => setForkTravel(Number(val))}
                 >
-                  <SelectTrigger className="h-9 bg-slate-950 border-slate-800 text-xs">
+                  <SelectTrigger className="h-9 bg-slate-950 border-slate-800 text-base md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-slate-900 border-slate-800">
                     {[120, 130, 140, 150, 160, 170, 180].map((t) => (
-                      <SelectItem key={t} value={String(t)} className="text-xs">
+                      <SelectItem key={t} value={String(t)} className="text-base md:text-sm">
                         {t} mm
                       </SelectItem>
                     ))}
@@ -420,7 +420,7 @@ export function BikeFormDialog({
                     value={shockModel}
                     onChange={(e) => setShockModel(e.target.value)}
                     placeholder="e.g. Fox Float X2"
-                    className="h-9 bg-slate-950 border-slate-800 text-xs"
+                    className="h-9 bg-slate-950 border-slate-800 text-base md:text-sm"
                   />
                 </div>
               )}

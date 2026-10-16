@@ -397,12 +397,12 @@ export function BikeBuilderDialog({
               <div className="space-y-1.5">
                 <Label className="text-xs text-zinc-300">Brand</Label>
                 <Select value={brand} onValueChange={setBrand}>
-                  <SelectTrigger className="bg-zinc-900 ring-1 ring-white/10 text-xs">
+                  <SelectTrigger className="bg-zinc-900 ring-1 ring-white/10 text-base md:text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
                     {POPULAR_BRANDS.map((b) => (
-                      <SelectItem key={b} value={b} className="text-xs">
+                      <SelectItem key={b} value={b} className="text-base md:text-sm">
                         {b}
                       </SelectItem>
                     ))}
@@ -421,7 +421,7 @@ export function BikeBuilderDialog({
                     value={customBrand}
                     onChange={(e) => setCustomBrand(e.target.value)}
                     required
-                    className="bg-zinc-900 ring-1 ring-white/10 text-xs"
+                    className="bg-zinc-900 ring-1 ring-white/10 text-base md:text-sm"
                   />
                 </div>
               ) : (
@@ -435,7 +435,7 @@ export function BikeBuilderDialog({
                     value={model}
                     onChange={(e) => setModel(e.target.value)}
                     required
-                    className="bg-zinc-900 ring-1 ring-white/10 text-xs"
+                    className="bg-zinc-900 ring-1 ring-white/10 text-base md:text-sm"
                   />
                 </div>
               )}
@@ -451,7 +451,7 @@ export function BikeBuilderDialog({
                     value={model}
                     onChange={(e) => setModel(e.target.value)}
                     required
-                    className="bg-zinc-900 ring-1 ring-white/10 text-xs"
+                    className="bg-zinc-900 ring-1 ring-white/10 text-base md:text-sm"
                   />
                 </div>
               ) : (
@@ -459,12 +459,12 @@ export function BikeBuilderDialog({
                   <div className="space-y-1.5">
                     <Label className="text-xs text-zinc-300">Year</Label>
                     <Select value={year} onValueChange={setYear}>
-                      <SelectTrigger className="bg-zinc-900 ring-1 ring-white/10 text-xs">
+                      <SelectTrigger className="bg-zinc-900 ring-1 ring-white/10 text-base md:text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
                         {MODEL_YEARS.map((y) => (
-                          <SelectItem key={y} value={y} className="text-xs">
+                          <SelectItem key={y} value={y} className="text-base md:text-sm">
                             {y}
                           </SelectItem>
                         ))}
@@ -475,12 +475,12 @@ export function BikeBuilderDialog({
                   <div className="space-y-1.5">
                     <Label className="text-xs text-zinc-300">Size</Label>
                     <Select value={frameSize} onValueChange={setFrameSize}>
-                      <SelectTrigger className="bg-zinc-900 ring-1 ring-white/10 text-xs">
+                      <SelectTrigger className="bg-zinc-900 ring-1 ring-white/10 text-base md:text-sm">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
                         {FRAME_SIZES.map((s) => (
-                          <SelectItem key={s} value={s} className="text-xs">
+                          <SelectItem key={s} value={s} className="text-base md:text-sm">
                             {s}
                           </SelectItem>
                         ))}
@@ -533,12 +533,12 @@ export function BikeBuilderDialog({
                     value={frontTire.wheelSize}
                     onValueChange={handleFrontWheelSizeChange}
                   >
-                    <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-xs">
+                    <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
                       {WHEEL_SIZES.map((w) => (
-                        <SelectItem key={w} value={w} className="text-xs">
+                        <SelectItem key={w} value={w} className="text-base md:text-sm">
                           {w}
                         </SelectItem>
                       ))}
@@ -554,7 +554,7 @@ export function BikeBuilderDialog({
                       setFrontTire((prev) => ({ ...prev, model: e.target.value }))
                     }
                     placeholder="e.g. Assegai"
-                    className="h-9 bg-zinc-950 ring-1 ring-white/10 text-xs"
+                    className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
                   />
                 </div>
 
@@ -566,12 +566,12 @@ export function BikeBuilderDialog({
                       setFrontTire((prev) => ({ ...prev, width: val }))
                     }
                   >
-                    <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-xs">
+                    <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm">
                       <SelectValue placeholder="Select width" />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
                       {frontWidthOptions.map((w) => (
-                        <SelectItem key={w} value={w} className="text-xs">
+                        <SelectItem key={w} value={w} className="text-base md:text-sm">
                           {w}
                         </SelectItem>
                       ))}
@@ -587,17 +587,17 @@ export function BikeBuilderDialog({
                       setFrontTire((prev) => ({ ...prev, casing: val }))
                     }
                   >
-                    <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-xs">
+                    <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
-                      <SelectItem value="light" className="text-xs">
+                      <SelectItem value="light" className="text-base md:text-sm">
                         Light (Trail/Road)
                       </SelectItem>
-                      <SelectItem value="standard" className="text-xs">
+                      <SelectItem value="standard" className="text-base md:text-sm">
                         Standard (Enduro/All-Rd)
                       </SelectItem>
-                      <SelectItem value="heavy" className="text-xs">
+                      <SelectItem value="heavy" className="text-base md:text-sm">
                         Heavy / DH (DoubleDown)
                       </SelectItem>
                     </SelectContent>
@@ -667,12 +667,12 @@ export function BikeBuilderDialog({
                     value={rearTire.wheelSize}
                     onValueChange={handleRearWheelSizeChange}
                   >
-                    <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-xs">
+                    <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
                       {WHEEL_SIZES.map((w) => (
-                        <SelectItem key={w} value={w} className="text-xs">
+                        <SelectItem key={w} value={w} className="text-base md:text-sm">
                           {w}
                         </SelectItem>
                       ))}
@@ -688,7 +688,7 @@ export function BikeBuilderDialog({
                       setRearTire((prev) => ({ ...prev, model: e.target.value }))
                     }
                     placeholder="e.g. Minion DHR II"
-                    className="h-9 bg-zinc-950 ring-1 ring-white/10 text-xs"
+                    className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
                   />
                 </div>
 
@@ -700,12 +700,12 @@ export function BikeBuilderDialog({
                       setRearTire((prev) => ({ ...prev, width: val }))
                     }
                   >
-                    <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-xs">
+                    <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm">
                       <SelectValue placeholder="Select width" />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
                       {rearWidthOptions.map((w) => (
-                        <SelectItem key={w} value={w} className="text-xs">
+                        <SelectItem key={w} value={w} className="text-base md:text-sm">
                           {w}
                         </SelectItem>
                       ))}
@@ -721,17 +721,17 @@ export function BikeBuilderDialog({
                       setRearTire((prev) => ({ ...prev, casing: val }))
                     }
                   >
-                    <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-xs">
+                    <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
-                      <SelectItem value="light" className="text-xs">
+                      <SelectItem value="light" className="text-base md:text-sm">
                         Light (Trail/Road)
                       </SelectItem>
-                      <SelectItem value="standard" className="text-xs">
+                      <SelectItem value="standard" className="text-base md:text-sm">
                         Standard (Enduro/All-Rd)
                       </SelectItem>
-                      <SelectItem value="heavy" className="text-xs">
+                      <SelectItem value="heavy" className="text-base md:text-sm">
                         Heavy / DH (DoubleDown)
                       </SelectItem>
                     </SelectContent>
@@ -797,7 +797,7 @@ export function BikeBuilderDialog({
                     value={forkModel}
                     onChange={(e) => setForkModel(e.target.value)}
                     placeholder="e.g. Fox 38 Factory"
-                    className="h-9 bg-zinc-950 ring-1 ring-white/10 text-xs"
+                    className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
                   />
                 </div>
 
@@ -807,13 +807,13 @@ export function BikeBuilderDialog({
                     value={String(forkTravel)}
                     onValueChange={(val) => setForkTravel(Number(val))}
                   >
-                    <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-xs">
+                    <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
                       {[100, 110, 120, 130, 140, 150, 160, 170, 180, 200].map(
                         (t) => (
-                          <SelectItem key={t} value={String(t)} className="text-xs">
+                          <SelectItem key={t} value={String(t)} className="text-base md:text-sm">
                             {t} mm
                           </SelectItem>
                         )
@@ -829,7 +829,7 @@ export function BikeBuilderDialog({
                       value={shockModel}
                       onChange={(e) => setShockModel(e.target.value)}
                       placeholder="e.g. Fox Float X2"
-                      className="h-9 bg-zinc-950 ring-1 ring-white/10 text-xs"
+                      className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
                     />
                   </div>
                 )}

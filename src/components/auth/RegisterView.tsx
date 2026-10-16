@@ -169,7 +169,7 @@ export function RegisterView({
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 disabled={isLoading}
-                className="h-11 pl-9 bg-zinc-900 border-none ring-1 ring-white/10 focus-visible:ring-lime-400 text-sm placeholder:text-zinc-600 rounded-xl"
+                className="h-11 pl-9 bg-zinc-900 border-none ring-1 ring-white/10 focus-visible:ring-lime-400 text-base md:text-sm placeholder:text-zinc-600 rounded-xl"
               />
             </div>
           </div>
@@ -188,7 +188,7 @@ export function RegisterView({
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={isLoading}
-                className="h-11 pl-9 bg-zinc-900 border-none ring-1 ring-white/10 focus-visible:ring-lime-400 text-sm placeholder:text-zinc-600 rounded-xl"
+                className="h-11 pl-9 bg-zinc-900 border-none ring-1 ring-white/10 focus-visible:ring-lime-400 text-base md:text-sm placeholder:text-zinc-600 rounded-xl"
               />
             </div>
           </div>
@@ -207,7 +207,7 @@ export function RegisterView({
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
-                className="h-11 pl-9 pr-10 bg-zinc-900 border-none ring-1 ring-white/10 focus-visible:ring-lime-400 text-sm placeholder:text-zinc-600 rounded-xl font-mono"
+                className="h-11 pl-9 pr-10 bg-zinc-900 border-none ring-1 ring-white/10 focus-visible:ring-lime-400 text-base md:text-sm placeholder:text-zinc-600 rounded-xl font-mono"
               />
               <button
                 type="button"
