@@ -36,7 +36,7 @@ export interface TrailLocationPreset {
 export const PRESET_TRAIL_LOCATIONS: TrailLocationPreset[] = [
   {
     name: "Squamish, BC",
-    label: "Current Location (Squamish, BC)",
+    label: "Squamish (Alice Lake), BC",
     latitude: 49.7016,
     longitude: -123.1558,
   },
@@ -158,6 +158,48 @@ export function getCurrentPosition(): Promise<{ latitude: number; longitude: num
       }
     );
   });
+}
+
+/**
+ * Reverse geocode latitude and longitude to a human-readable city name using BigDataCloud's free keyless API
+ */
+export async function reverseGeocode(
+  latitude: number,
+  longitude: number
+): Promise<string> {
+  const url = `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${latitude}&longitude=${longitude}&localityLanguage=en`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) {
+      throw new Error(`Reverse geocode failed with status: ${res.status}`);
+    }
+    const data = await res.json();
+    const city =
+      data.city ||
+      data.locality ||
+      data.principalSubdivision ||
+      data.countryName;
+
+    let subCode = data.principalSubdivisionCode;
+    if (subCode && typeof subCode === "string" && subCode.includes("-")) {
+      subCode = subCode.split("-")[1];
+    } else if (!subCode && data.principalSubdivision) {
+      subCode = data.principalSubdivision;
+    }
+
+    if (city && subCode && city !== subCode) {
+      return `${city}, ${subCode}`;
+    }
+    if (city && data.countryCode && !subCode) {
+      return `${city}, ${data.countryCode}`;
+    }
+    if (city) {
+      return city;
+    }
+  } catch (err) {
+    console.warn("Reverse geocode lookup error:", err);
+  }
+  return "Current Location";
 }
 
 /**

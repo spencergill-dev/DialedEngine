@@ -97,6 +97,7 @@ interface RidePlanDrawerProps {
   onUseCurrentLocation: () => Promise<void>;
   isLocating?: boolean;
   locationError?: string | null;
+  isDeviceLocation?: boolean;
 }
 
 export function RidePlanDrawer({
@@ -112,6 +113,7 @@ export function RidePlanDrawer({
   onUseCurrentLocation,
   isLocating = false,
   locationError = null,
+  isDeviceLocation = false,
 }: RidePlanDrawerProps) {
   const [activeTab, setActiveTab] = useState<"location" | "time">(initialTab);
   const [customTemp, setCustomTemp] = useState<number>(selectedTimePlan.temperature);
@@ -385,7 +387,7 @@ export function RidePlanDrawer({
                 onClick={onUseCurrentLocation}
                 disabled={isLocating}
                 className={`w-full p-3.5 rounded-xl border text-left transition-all flex items-center justify-between ${
-                  selectedLocation.startsWith("Current Location")
+                  isDeviceLocation
                     ? "bg-zinc-900 border-lime-400/50 ring-1 ring-lime-400/20 text-white"
                     : "bg-zinc-900/50 border-zinc-800/80 hover:bg-zinc-900 text-zinc-200"
                 }`}
@@ -404,13 +406,15 @@ export function RidePlanDrawer({
                     </span>
                     <span className="text-[11px] text-zinc-400">
                       {isLocating
-                        ? "Requesting HTML5 browser coordinates..."
-                        : "Detect exact latitude and longitude via browser"}
+                        ? "Requesting GPS & resolving city name..."
+                        : isDeviceLocation && selectedLocation !== "Locating..." && selectedLocation !== "Set Location"
+                        ? `Locked: ${selectedLocation}`
+                        : "Detect city via browser geolocation"}
                     </span>
                   </div>
                 </div>
 
-                {selectedLocation.startsWith("Current Location") && (
+                {isDeviceLocation && !isLocating && (
                   <div className="w-5 h-5 rounded-full bg-lime-400 text-black flex items-center justify-center shrink-0">
                     <Check className="w-3 h-3 stroke-[3]" />
                   </div>

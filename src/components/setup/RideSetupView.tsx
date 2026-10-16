@@ -29,6 +29,7 @@ import {
 import {
   fetchLiveWeather,
   getCurrentPosition,
+  reverseGeocode,
   PRESET_TRAIL_LOCATIONS,
   type LocationCoordinates,
 } from "@/services/WeatherService";
@@ -85,13 +86,12 @@ export function RideSetupView({
   const [breakdownTab, setBreakdownTab] = useState<"front" | "rear">("front");
 
   // Live Conditions & Forecasting State
-  const [selectedLocation, setSelectedLocation] = useState(
-    PRESET_TRAIL_LOCATIONS[0].label
-  );
-  const [currentCoords, setCurrentCoords] = useState<LocationCoordinates>({
+  const [selectedLocation, setSelectedLocation] = useState<string>("Locating...");
+  const [_currentCoords, setCurrentCoords] = useState<LocationCoordinates>({
     latitude: PRESET_TRAIL_LOCATIONS[0].latitude,
     longitude: PRESET_TRAIL_LOCATIONS[0].longitude,
   });
+  const [isDeviceLocation, setIsDeviceLocation] = useState<boolean>(true);
   const [timePresets, setTimePresets] = useState<RideTimePlan[]>(TIME_PRESETS);
   const [selectedTimePlan, setSelectedTimePlan] = useState<RideTimePlan>(
     TIME_PRESETS[0]
@@ -100,7 +100,7 @@ export function RideSetupView({
   const [ridePlanTab, setRidePlanTab] = useState<"location" | "time">("time");
   const [autoWetNote, setAutoWetNote] = useState<string | null>(null);
   const [isLoadingWeather, setIsLoadingWeather] = useState(false);
-  const [isLocating, setIsLocating] = useState(false);
+  const [isLocating, setIsLocating] = useState(true);
   const [locationError, setLocationError] = useState<string | null>(null);
 
   const loadWeatherForCoords = useCallback(
@@ -124,10 +124,58 @@ export function RideSetupView({
     []
   );
 
-  // Initial load: fetch live weather from Open-Meteo on mount
+  // Initial load: Attempt automatic device geolocation & reverse geocoding on mount
   useEffect(() => {
-    loadWeatherForCoords(currentCoords);
-  }, [loadWeatherForCoords, currentCoords]);
+    let isCancelled = false;
+
+    const autoLocateAndFetch = async () => {
+      setIsLocating(true);
+      setLocationError(null);
+      try {
+        const pos = await getCurrentPosition();
+        if (isCancelled) return;
+        const coords: LocationCoordinates = {
+          latitude: pos.latitude,
+          longitude: pos.longitude,
+        };
+        setCurrentCoords(coords);
+        setIsDeviceLocation(true);
+
+        // Reverse geocode to resolve human-readable city name
+        const cityName = await reverseGeocode(pos.latitude, pos.longitude);
+        if (isCancelled) return;
+        setSelectedLocation(cityName);
+
+        // Fetch live weather telemetry for device coordinates
+        await loadWeatherForCoords(coords);
+      } catch (err: any) {
+        if (isCancelled) return;
+        console.warn("Auto-location failed or permission denied on mount:", err);
+        setSelectedLocation("Set Location");
+        setIsDeviceLocation(false);
+        if (err?.code === 1) {
+          setLocationError("Location permission denied. Please allow location access or choose a trail center.");
+        } else {
+          setLocationError("Location access unavailable. Tap to choose your location.");
+        }
+        // Load fallback trail weather so math engine has valid base temperature
+        await loadWeatherForCoords({
+          latitude: PRESET_TRAIL_LOCATIONS[0].latitude,
+          longitude: PRESET_TRAIL_LOCATIONS[0].longitude,
+        });
+      } finally {
+        if (!isCancelled) {
+          setIsLocating(false);
+        }
+      }
+    };
+
+    autoLocateAndFetch();
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [loadWeatherForCoords]);
 
   const handleUseCurrentLocation = async () => {
     setIsLocating(true);
@@ -138,19 +186,25 @@ export function RideSetupView({
         latitude: pos.latitude,
         longitude: pos.longitude,
       };
-      const label = `Current Location (${pos.latitude.toFixed(2)}°, ${pos.longitude.toFixed(2)}°)`;
       setCurrentCoords(coords);
-      setSelectedLocation(label);
-      toast.success("Device GPS locked. Fetching Open-Meteo telemetry...");
+      setIsDeviceLocation(true);
+
+      const cityName = await reverseGeocode(pos.latitude, pos.longitude);
+      setSelectedLocation(cityName);
+      toast.success(`Location detected: ${cityName}`);
       await loadWeatherForCoords(coords);
     } catch (err: any) {
       console.warn("Geolocation acquisition failed:", err);
       if (err?.code === 1) {
         setLocationError("Location permission denied. Please allow location access or choose a trail center.");
-        toast.warning("Location access denied. Using Squamish, BC.");
+        toast.warning("Location access denied. Please select a trail center.");
       } else {
         setLocationError("GPS signal unavailable. Please select or search a trail center.");
-        toast.warning("GPS unavailable. Using Squamish, BC.");
+        toast.warning("GPS unavailable. Please select a trail center.");
+      }
+      if (selectedLocation === "Locating...") {
+        setSelectedLocation("Set Location");
+        setIsDeviceLocation(false);
       }
     } finally {
       setIsLocating(false);
@@ -253,10 +307,26 @@ export function RideSetupView({
               }}
               className="inline-flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors group cursor-pointer"
             >
-              <MapPin className="w-3.5 h-3.5 text-lime-400 shrink-0" />
-              <span className="font-medium underline-offset-4 group-hover:underline">
-                {selectedLocation}
-              </span>
+              {isLocating || selectedLocation === "Locating..." ? (
+                <>
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-lime-400 shrink-0" />
+                  <span className="font-medium text-zinc-300">Locating...</span>
+                </>
+              ) : selectedLocation === "Set Location" ? (
+                <>
+                  <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span className="font-medium text-amber-400 underline-offset-4 group-hover:underline">
+                    Set Location
+                  </span>
+                </>
+              ) : (
+                <>
+                  <MapPin className="w-3.5 h-3.5 text-lime-400 shrink-0" />
+                  <span className="font-medium underline-offset-4 group-hover:underline">
+                    {selectedLocation}
+                  </span>
+                </>
+              )}
             </button>
 
             <span className="text-zinc-700">•</span>
@@ -833,6 +903,7 @@ export function RideSetupView({
         onSelectLocation={(loc, coords) => {
           setSelectedLocation(loc);
           setCurrentCoords(coords);
+          setIsDeviceLocation(false);
           loadWeatherForCoords(coords);
           setIsRidePlanOpen(false);
           toast.success(`Location calibrated: ${loc}`);
@@ -846,6 +917,7 @@ export function RideSetupView({
         onUseCurrentLocation={handleUseCurrentLocation}
         isLocating={isLocating}
         locationError={locationError}
+        isDeviceLocation={isDeviceLocation}
       />
     </div>
   );
