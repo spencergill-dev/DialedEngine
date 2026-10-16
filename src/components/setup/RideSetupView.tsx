@@ -332,11 +332,11 @@ export function RideSetupView({
   const hasAnySuspension = setup.hasForkSuspension || setup.hasRearSuspension;
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-3 sm:space-y-4 pb-12">
       {/* 1. Active Context & Live Conditions (Borderless Section) */}
-      <section className="pb-8 border-b border-zinc-800/50">
-        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3">
-          <div className="space-y-1">
+      <section className="pb-2.5 sm:pb-3 border-b border-zinc-800/50">
+        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-y-1.5 sm:gap-3 mb-2">
+          <div className="space-y-0.5">
             <div className="flex items-center gap-2">
               <span className="w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_8px_rgba(163,230,53,0.8)] shrink-0" />
               <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-zinc-400">
@@ -344,7 +344,7 @@ export function RideSetupView({
               </span>
             </div>
             <div className="flex items-center gap-2 pl-3.5">
-              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-tight">
                 {displayBrand} {currentBike.model}
               </h1>
               <button
@@ -370,7 +370,7 @@ export function RideSetupView({
         </div>
 
         {/* Live Conditions & Forecasting Module (Compact, Borderless, Geist Sans) */}
-        <div className="mt-4 pt-3 border-t border-zinc-800/40 space-y-1.5 font-sans">
+        <div className="mt-1 pt-2 border-t border-zinc-800/40 font-sans">
           <div className="flex items-center gap-2 flex-wrap text-xs">
             {/* Location Button */}
             <button
@@ -422,7 +422,7 @@ export function RideSetupView({
           </div>
 
           {/* Forecasted Weather Readout */}
-          <div className="flex items-center gap-2 text-xs text-zinc-400 flex-wrap">
+          <div className="flex items-center gap-2 text-xs text-zinc-400 flex-wrap mt-1 mb-3">
             {isLoadingWeather ? (
               <span className="flex items-center gap-1.5 text-zinc-400 text-xs">
                 <Loader2 className="w-3.5 h-3.5 animate-spin text-lime-400 shrink-0" />
@@ -455,7 +455,7 @@ export function RideSetupView({
         </div>
 
         {/* Pre-Ride Inputs: Surface Conditions & Ride Intensity (2-Column Grid) */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-5 mt-2">
           {/* Surface Conditions (Framer Motion Sliding Segment Pill) */}
           <div className="space-y-2 min-w-0">
             <div className="flex items-center justify-between">
@@ -575,12 +575,12 @@ export function RideSetupView({
       </section>
 
       {/* 2. Tires Section (Pure Digital Telemetry Typography, Borderless) */}
-      <section className="py-8 border-b border-zinc-800">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-10 md:gap-16">
+      <section className="py-2 sm:py-3 border-b border-zinc-800">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
           {/* Front Tire Module */}
-          <div className="space-y-4">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-zinc-900/40 border border-zinc-800/40 space-y-2.5">
             {/* Top: Title */}
-            <div className="flex items-center justify-between pb-1">
+            <div className="flex items-center justify-between pb-0.5">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-sans font-bold uppercase tracking-wider text-white">
                   FRONT TIRE
@@ -597,13 +597,13 @@ export function RideSetupView({
 
             {/* Middle: Scaled Stark PSI Readout in Geist Mono */}
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl sm:text-5xl font-bold font-mono tracking-tight text-white leading-none">
+              <span className="text-3xl sm:text-4xl font-bold font-mono tracking-tight text-white leading-none">
                 <AnimatedNumber value={setup.frontPsi} precision={1} />
               </span>
-              <span className="text-base sm:text-lg font-sans font-bold text-zinc-400 shrink-0">
+              <span className="text-sm sm:text-base font-sans font-bold text-zinc-400 shrink-0">
                 PSI
               </span>
-              <span className="text-xs sm:text-sm font-mono text-zinc-500 ml-1.5 shrink-0">
+              <span className="text-xs font-mono text-zinc-500 ml-1 shrink-0">
                 ({(setup.frontPsi * 0.0689476).toFixed(2)} bar)
               </span>
             </div>
@@ -615,10 +615,10 @@ export function RideSetupView({
                 setBreakdownTab("front");
                 setIsBreakdownOpen(true);
               }}
-              className="bg-zinc-900/50 hover:bg-zinc-800 rounded-full px-3 py-1.5 flex items-center gap-2 cursor-pointer transition-colors border border-zinc-800/80 group w-fit mt-1"
+              className="bg-zinc-900/60 hover:bg-zinc-800 rounded-full px-2.5 py-1 flex items-center gap-1.5 cursor-pointer transition-colors border border-zinc-800/80 group w-fit"
             >
               <span
-                className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full ${
                   frontNetAdjustment > 0
                     ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
                     : frontNetAdjustment < 0
@@ -638,9 +638,9 @@ export function RideSetupView({
           </div>
 
           {/* Rear Tire Module */}
-          <div className="space-y-4">
+          <div className="p-3.5 sm:p-4 rounded-2xl bg-zinc-900/40 border border-zinc-800/40 space-y-2.5">
             {/* Top: Title */}
-            <div className="flex items-center justify-between pb-1">
+            <div className="flex items-center justify-between pb-0.5">
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-xs font-sans font-bold uppercase tracking-wider text-white">
                   REAR TIRE
@@ -657,13 +657,13 @@ export function RideSetupView({
 
             {/* Middle: Scaled Stark PSI Readout in Geist Mono */}
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl sm:text-5xl font-bold font-mono tracking-tight text-white leading-none">
+              <span className="text-3xl sm:text-4xl font-bold font-mono tracking-tight text-white leading-none">
                 <AnimatedNumber value={setup.rearPsi} precision={1} />
               </span>
-              <span className="text-base sm:text-lg font-sans font-bold text-zinc-400 shrink-0">
+              <span className="text-sm sm:text-base font-sans font-bold text-zinc-400 shrink-0">
                 PSI
               </span>
-              <span className="text-xs sm:text-sm font-mono text-zinc-500 ml-1.5 shrink-0">
+              <span className="text-xs font-mono text-zinc-500 ml-1 shrink-0">
                 ({(setup.rearPsi * 0.0689476).toFixed(2)} bar)
               </span>
             </div>
@@ -675,10 +675,10 @@ export function RideSetupView({
                 setBreakdownTab("rear");
                 setIsBreakdownOpen(true);
               }}
-              className="bg-zinc-900/50 hover:bg-zinc-800 rounded-full px-3 py-1.5 flex items-center gap-2 cursor-pointer transition-colors border border-zinc-800/80 group w-fit mt-1"
+              className="bg-zinc-900/60 hover:bg-zinc-800 rounded-full px-2.5 py-1 flex items-center gap-1.5 cursor-pointer transition-colors border border-zinc-800/80 group w-fit"
             >
               <span
-                className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                className={`text-[10px] font-mono font-bold px-1.5 py-0.5 rounded-full ${
                   rearNetAdjustment > 0
                     ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
                     : rearNetAdjustment < 0
