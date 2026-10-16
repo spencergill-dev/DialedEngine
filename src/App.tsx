@@ -11,7 +11,7 @@ export function App() {
 
       <DialedEngine />
 
-      <footer className="mt-auto py-8 text-center text-xs text-zinc-400 border-t border-zinc-800/50 font-sans relative z-10">
+      <footer className="hidden md:block mt-auto py-8 text-center text-xs text-zinc-400 border-t border-zinc-800/50 font-sans relative z-10">
         <div className="flex items-center justify-center gap-2">
           <span className="font-semibold text-zinc-300">DIALED</span>
           <span>•</span>

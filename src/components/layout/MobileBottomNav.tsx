@@ -13,24 +13,34 @@ export function MobileBottomNav({
   bikesCount,
 }: MobileBottomNavProps) {
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-[#111111]/95 backdrop-blur-xl border-t border-zinc-800/60 pb-[calc(env(safe-area-inset-bottom,0px)+0.25rem)]">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 md:hidden bg-zinc-950/85 backdrop-blur-md border-t border-zinc-800 shadow-[0_-4px_24px_rgba(0,0,0,0.6)] pb-[calc(env(safe-area-inset-bottom,0px)+0.35rem)]">
       <div className="grid grid-cols-3 w-full max-w-lg mx-auto py-1.5">
-        {/* 1. Profile Tab (switches main view to ProfileView) */}
+        {/* 1. Profile Tab */}
         <button
           onClick={() => onSelectView("profile")}
-          className={`flex flex-col items-center justify-center py-1 transition-colors relative ${
-            mainView === "profile" ? "text-white" : "text-zinc-500 hover:text-zinc-300"
+          className={`flex flex-col items-center justify-center py-1.5 transition-colors relative ${
+            mainView === "profile"
+              ? "text-lime-400"
+              : "text-zinc-400 hover:text-zinc-200"
           }`}
           aria-label="Rider Profile"
         >
           <div className="w-5 h-5 flex items-center justify-center">
             <User className="w-5 h-5" />
           </div>
-          <span className="text-[10px] font-medium tracking-tight mt-1">Profile</span>
+          <span
+            className={`text-[10px] tracking-tight mt-1 transition-colors ${
+              mainView === "profile"
+                ? "text-white font-bold"
+                : "text-zinc-400 font-medium"
+            }`}
+          >
+            Profile
+          </span>
           {mainView === "profile" && (
             <motion.span
               layoutId="mobile-nav-dot"
-              className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_6px_rgba(163,230,53,0.8)]"
+              className="absolute -bottom-0.5 w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_8px_rgba(163,230,53,0.9)]"
               transition={{ type: "spring", stiffness: 450, damping: 32 }}
             />
           )}
@@ -39,19 +49,29 @@ export function MobileBottomNav({
         {/* 2. Ride Setup Tab */}
         <button
           onClick={() => onSelectView("setup")}
-          className={`flex flex-col items-center justify-center py-1 transition-colors relative ${
-            mainView === "setup" ? "text-white" : "text-zinc-500 hover:text-zinc-300"
+          className={`flex flex-col items-center justify-center py-1.5 transition-colors relative ${
+            mainView === "setup"
+              ? "text-lime-400"
+              : "text-zinc-400 hover:text-zinc-200"
           }`}
           aria-label="Ride Setup"
         >
           <div className="w-5 h-5 flex items-center justify-center relative">
             <Compass className="w-5 h-5" />
           </div>
-          <span className="text-[10px] font-medium tracking-tight mt-1">Ride Setup</span>
+          <span
+            className={`text-[10px] tracking-tight mt-1 transition-colors ${
+              mainView === "setup"
+                ? "text-white font-bold"
+                : "text-zinc-400 font-medium"
+            }`}
+          >
+            Ride Setup
+          </span>
           {mainView === "setup" && (
             <motion.span
               layoutId="mobile-nav-dot"
-              className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_6px_rgba(163,230,53,0.8)]"
+              className="absolute -bottom-0.5 w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_8px_rgba(163,230,53,0.9)]"
               transition={{ type: "spring", stiffness: 450, damping: 32 }}
             />
           )}
@@ -60,8 +80,10 @@ export function MobileBottomNav({
         {/* 3. Garage Tab */}
         <button
           onClick={() => onSelectView("garage")}
-          className={`flex flex-col items-center justify-center py-1 transition-colors relative ${
-            mainView === "garage" ? "text-white" : "text-zinc-500 hover:text-zinc-300"
+          className={`flex flex-col items-center justify-center py-1.5 transition-colors relative ${
+            mainView === "garage"
+              ? "text-lime-400"
+              : "text-zinc-400 hover:text-zinc-200"
           }`}
           aria-label="Garage Fleet"
         >
@@ -73,11 +95,19 @@ export function MobileBottomNav({
               </span>
             )}
           </div>
-          <span className="text-[10px] font-medium tracking-tight mt-1">Garage</span>
+          <span
+            className={`text-[10px] tracking-tight mt-1 transition-colors ${
+              mainView === "garage"
+                ? "text-white font-bold"
+                : "text-zinc-400 font-medium"
+            }`}
+          >
+            Garage
+          </span>
           {mainView === "garage" && (
             <motion.span
               layoutId="mobile-nav-dot"
-              className="absolute -bottom-1 w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_6px_rgba(163,230,53,0.8)]"
+              className="absolute -bottom-0.5 w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_8px_rgba(163,230,53,0.9)]"
               transition={{ type: "spring", stiffness: 450, damping: 32 }}
             />
           )}

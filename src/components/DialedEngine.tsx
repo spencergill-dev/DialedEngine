@@ -34,8 +34,8 @@ export function DialedEngine() {
         onSelectBike={setActiveBikeId}
       />
 
-      {/* Main View Area (with bottom clearance for mobile fixed tab bar) */}
-      <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 pt-6 pb-24 md:py-8 flex-1">
+      {/* Main View Area (with generous bottom clearance for mobile fixed tab bar) */}
+      <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 pt-6 pb-28 sm:pb-32 md:py-8 flex-1">
         {mainView === "setup" && (
           <RideSetupView
             bikes={bikes}
