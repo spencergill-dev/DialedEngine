@@ -9,10 +9,10 @@ import {
   Compass,
   Flame,
   RotateCw,
-  Calculator,
   MapPin,
   Clock,
   Cloud,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -96,6 +96,12 @@ export function RideSetupView({
     rideStyle,
     selectedTimePlan.temperature
   );
+
+  const rawFrontDelta = setup.frontModifiers.reduce((acc, m) => acc + m.delta, 0);
+  const frontNetAdjustment = Math.abs(rawFrontDelta) < 0.001 ? 0 : rawFrontDelta;
+
+  const rawRearDelta = setup.rearModifiers.reduce((acc, m) => acc + m.delta, 0);
+  const rearNetAdjustment = Math.abs(rawRearDelta) < 0.001 ? 0 : rawRearDelta;
 
   const handleSelectTimePlan = (plan: RideTimePlan, willAutoSetWet: boolean) => {
     setSelectedTimePlan(plan);
@@ -380,17 +386,32 @@ export function RideSetupView({
               </span>
             </div>
 
-            {/* Under PSI: Progressive Disclosure Action */}
+            {/* Under PSI: Information Scent Trigger Button */}
             <button
               type="button"
               onClick={() => {
                 setBreakdownTab("front");
                 setIsBreakdownOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors group pt-1"
+              className="bg-zinc-900/50 hover:bg-zinc-800 rounded-full px-3 py-1.5 flex items-center gap-2 cursor-pointer transition-colors border border-zinc-800/80 group w-fit mt-1"
             >
-              <Calculator className="w-3.5 h-3.5 text-zinc-500 group-hover:text-lime-400 transition-colors" />
-              <span className="font-sans font-medium">View Math</span>
+              <span
+                className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                  frontNetAdjustment > 0
+                    ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                    : frontNetAdjustment < 0
+                    ? "bg-lime-500/10 text-lime-400 border border-lime-500/20"
+                    : "bg-zinc-800 text-zinc-400 border border-zinc-700/50"
+                }`}
+              >
+                {frontNetAdjustment > 0
+                  ? `+${frontNetAdjustment.toFixed(1)} PSI`
+                  : `${frontNetAdjustment.toFixed(1)} PSI`}
+              </span>
+              <span className="text-xs text-zinc-400 font-sans font-medium group-hover:text-zinc-200 transition-colors">
+                Net Setup Adjustment
+              </span>
+              <ChevronRight className="w-3.5 h-3.5 text-zinc-500 group-hover:text-zinc-300 group-hover:translate-x-0.5 transition-all shrink-0" />
             </button>
           </div>
 
@@ -425,17 +446,32 @@ export function RideSetupView({
               </span>
             </div>
 
-            {/* Under PSI: Progressive Disclosure Action */}
+            {/* Under PSI: Information Scent Trigger Button */}
             <button
               type="button"
               onClick={() => {
                 setBreakdownTab("rear");
                 setIsBreakdownOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors group pt-1"
+              className="bg-zinc-900/50 hover:bg-zinc-800 rounded-full px-3 py-1.5 flex items-center gap-2 cursor-pointer transition-colors border border-zinc-800/80 group w-fit mt-1"
             >
-              <Calculator className="w-3.5 h-3.5 text-zinc-500 group-hover:text-lime-400 transition-colors" />
-              <span className="font-sans font-medium">View Math</span>
+              <span
+                className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                  rearNetAdjustment > 0
+                    ? "bg-amber-500/10 text-amber-400 border border-amber-500/20"
+                    : rearNetAdjustment < 0
+                    ? "bg-lime-500/10 text-lime-400 border border-lime-500/20"
+                    : "bg-zinc-800 text-zinc-400 border border-zinc-700/50"
+                }`}
+              >
+                {rearNetAdjustment > 0
+                  ? `+${rearNetAdjustment.toFixed(1)} PSI`
+                  : `${rearNetAdjustment.toFixed(1)} PSI`}
+              </span>
+              <span className="text-xs text-zinc-400 font-sans font-medium group-hover:text-zinc-200 transition-colors">
+                Net Setup Adjustment
+              </span>
+              <ChevronRight className="w-3.5 h-3.5 text-zinc-500 group-hover:text-zinc-300 group-hover:translate-x-0.5 transition-all shrink-0" />
             </button>
           </div>
         </div>
