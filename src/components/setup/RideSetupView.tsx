@@ -9,11 +9,13 @@ import {
   Compass,
   Flame,
   RotateCw,
+  Calculator,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Label } from "@/components/ui/label";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { useDialedMath } from "@/hooks/useDialedMath";
+import { CalculationBreakdownDialog } from "./CalculationBreakdownDialog";
 import type {
   Bike,
   RiderProfile,
@@ -63,11 +65,11 @@ export function RideSetupView({
   const [rideStyle, setRideStyle] = useState<RidingStyle>(
     profile.ridingStyle || "neutral"
   );
+  const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
+  const [breakdownTab, setBreakdownTab] = useState<"front" | "rear">("front");
 
   const currentBike = bikes.find((b) => b.id === activeBikeId) || bikes[0];
   const setup = useDialedMath(currentBike, profile, condition, rideStyle);
-
-  const riderName = profile.displayName?.trim() || "Spencer";
 
   if (!currentBike) {
     return (
@@ -95,26 +97,26 @@ export function RideSetupView({
 
   return (
     <div className="space-y-8 pb-12">
-      {/* 1. Header & Pre-Ride Configuration (Borderless Section) */}
+      {/* 1. Active Context & Pre-Ride Configuration (Borderless Section) */}
       <section className="pb-8 border-b border-zinc-800/50">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2.5">
-              {/* Strict 6px Volt active status dot */}
-              <span className="w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_8px_rgba(163,230,53,0.8)]" />
-              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                Ready to ride, {riderName}?
-              </h1>
+        <div className="flex flex-col sm:flex-row sm:items-baseline justify-between gap-3">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_8px_rgba(163,230,53,0.8)] shrink-0" />
+              <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-zinc-400">
+                ACTIVE SETUP
+              </span>
             </div>
-            <p className="text-xs text-zinc-400 mt-1 pl-4">
-              Calibrated for {displayBrand} {currentBike.model} • {profile.weight} lbs riding mass
-            </p>
+            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight pl-3.5">
+              {displayBrand} {currentBike.model}
+            </h1>
           </div>
 
-          <div className="flex items-center gap-2 text-xs font-sans text-zinc-400 pl-4 sm:pl-0">
-            <span className="text-white font-bold"><span className="font-mono">{profile.weight}</span> LBS</span>
-            <span>•</span>
-            <span className="capitalize text-zinc-400 font-sans">
+          <div className="flex items-center gap-2 pl-3.5 sm:pl-0">
+            <span className="px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-[11px] font-bold text-zinc-200">
+              <span className="font-mono">{profile.weight}</span> LBS
+            </span>
+            <span className="px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-[11px] font-medium text-zinc-300 capitalize">
               {currentBike.category.replace("_", " ")}
             </span>
           </div>
@@ -266,36 +268,18 @@ export function RideSetupView({
               </span>
             </div>
 
-            {/* Bottom: Modifier Ledger */}
-            <div className="space-y-2 pt-2 text-xs">
-              <span className="text-[10px] font-sans font-semibold uppercase tracking-wider text-zinc-500 block">
-                Active Setup Modifiers
-              </span>
-              {setup.frontModifiers.length === 0 ? (
-                <p className="text-zinc-500 italic text-xs">
-                  Standard baseline pressure calibrated for discipline and rider mass.
-                </p>
-              ) : (
-                <ul className="space-y-1.5">
-                  {setup.frontModifiers.map((mod, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-zinc-300">
-                      <span
-                        className={`text-[10px] font-sans font-semibold px-1.5 py-0.5 rounded shrink-0 ${
-                          mod.delta > 0
-                            ? "bg-amber-500/10 text-amber-400"
-                            : "bg-lime-500/10 text-lime-400"
-                        }`}
-                      >
-                        <span className="font-mono">{mod.delta > 0 ? `+${mod.delta.toFixed(1)}` : mod.delta.toFixed(1)}</span>
-                      </span>
-                      <span className="text-[11px] leading-tight text-zinc-300">
-                        {mod.description}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            {/* Under PSI: Progressive Disclosure Action */}
+            <button
+              type="button"
+              onClick={() => {
+                setBreakdownTab("front");
+                setIsBreakdownOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors group pt-1"
+            >
+              <Calculator className="w-3.5 h-3.5 text-zinc-500 group-hover:text-lime-400 transition-colors" />
+              <span className="font-sans font-medium">View Math</span>
+            </button>
           </div>
 
           {/* Rear Tire Module */}
@@ -329,36 +313,18 @@ export function RideSetupView({
               </span>
             </div>
 
-            {/* Bottom: Modifier Ledger */}
-            <div className="space-y-2 pt-2 text-xs">
-              <span className="text-[10px] font-sans font-semibold uppercase tracking-wider text-zinc-500 block">
-                Active Setup Modifiers
-              </span>
-              {setup.rearModifiers.length === 0 ? (
-                <p className="text-zinc-500 italic text-xs">
-                  Standard baseline pressure calibrated for discipline and rider mass.
-                </p>
-              ) : (
-                <ul className="space-y-1.5">
-                  {setup.rearModifiers.map((mod, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-zinc-300">
-                      <span
-                        className={`text-[10px] font-sans font-semibold px-1.5 py-0.5 rounded shrink-0 ${
-                          mod.delta > 0
-                            ? "bg-amber-500/10 text-amber-400"
-                            : "bg-lime-500/10 text-lime-400"
-                        }`}
-                      >
-                        <span className="font-mono">{mod.delta > 0 ? `+${mod.delta.toFixed(1)}` : mod.delta.toFixed(1)}</span>
-                      </span>
-                      <span className="text-[11px] leading-tight text-zinc-300">
-                        {mod.description}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+            {/* Under PSI: Progressive Disclosure Action */}
+            <button
+              type="button"
+              onClick={() => {
+                setBreakdownTab("rear");
+                setIsBreakdownOpen(true);
+              }}
+              className="inline-flex items-center gap-1.5 text-xs text-zinc-400 hover:text-white transition-colors group pt-1"
+            >
+              <Calculator className="w-3.5 h-3.5 text-zinc-500 group-hover:text-lime-400 transition-colors" />
+              <span className="font-sans font-medium">View Math</span>
+            </button>
           </div>
         </div>
       </section>
@@ -620,6 +586,16 @@ export function RideSetupView({
           Always check tire pressure cold before every ride.
         </div>
       </div>
+
+      {/* Progressive Disclosure Math Breakdown Modal */}
+      <CalculationBreakdownDialog
+        open={isBreakdownOpen}
+        onOpenChange={setIsBreakdownOpen}
+        bike={currentBike}
+        profile={profile}
+        initialTab={breakdownTab}
+        setup={setup}
+      />
     </div>
   );
 }
