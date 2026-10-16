@@ -7,7 +7,6 @@ import {
   SheetHeader,
   SheetTitle,
   SheetDescription,
-  SheetFooter,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -100,10 +99,11 @@ export function ProfileDrawer({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="right"
-        className="bg-[#111111] border-l border-zinc-800/50 p-6 sm:p-8 flex flex-col justify-between overflow-y-auto"
+        className="bg-[#111111] border-l border-zinc-800/50 p-0 flex flex-col h-[100dvh] overflow-hidden"
       >
-        <div className="space-y-6">
-          <SheetHeader className="text-left space-y-1.5 pb-4 border-b border-zinc-800/50">
+        {/* Rigid Top Header */}
+        <div className="flex-none p-6 pb-4 border-b border-zinc-800/50 pr-12">
+          <SheetHeader className="text-left space-y-1.5">
             <div className="flex items-center justify-between">
               <SheetTitle className="text-lg font-bold text-white flex items-center gap-2">
                 <User className="w-4 h-4 text-lime-400" />
@@ -119,7 +119,10 @@ export function ProfileDrawer({
                 : "Your personal metrics and default riding style dynamics stored in local memory."}
             </SheetDescription>
           </SheetHeader>
+        </div>
 
+        {/* Scrolling Profile Body */}
+        <div className="flex-1 overflow-y-auto p-6 space-y-6 overscroll-contain touch-pan-y">
           {/* VIEW MODE (Default) */}
           {!isEditing ? (
             <div className="space-y-6">
@@ -225,17 +228,6 @@ export function ProfileDrawer({
                     </p>
                   )}
                 </div>
-              </div>
-
-              {/* Prominent Edit Profile Trigger */}
-              <div className="pt-2">
-                <Button
-                  onClick={() => setIsEditing(true)}
-                  className="w-full h-11 bg-white text-black hover:bg-zinc-200 font-bold border-none flex items-center justify-center gap-2 shadow-lg transition-colors"
-                >
-                  <Edit3 className="w-4 h-4" />
-                  <span>Edit Profile</span>
-                </Button>
               </div>
             </div>
           ) : (
@@ -349,33 +341,45 @@ export function ProfileDrawer({
                 </div>
               </div>
 
-              {/* Edit Mode Actions */}
-              <div className="flex items-center gap-3 pt-2">
-                <Button
-                  onClick={handleCancelEdit}
-                  variant="ghost"
-                  className="flex-1 h-10 bg-zinc-900 text-zinc-300 hover:text-white hover:bg-zinc-850 text-xs border-none"
-                >
-                  <X className="w-3.5 h-3.5 mr-1.5" />
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleSave}
-                  className="flex-1 h-10 bg-white text-black hover:bg-zinc-200 font-bold text-xs shadow-lg transition-colors border-none"
-                >
-                  <Check className="w-3.5 h-3.5 mr-1.5" />
-                  Save Changes
-                </Button>
-              </div>
             </div>
           )}
         </div>
 
-        <SheetFooter className="pt-6 border-t border-white/5 mt-6">
-          <p className="text-[11px] text-zinc-500 font-mono text-center w-full">
-            DIALED PROFILE SYNC // LOCAL PERSISTENCE ACTIVE
-          </p>
-        </SheetFooter>
+        {/* Sticky Action Bar (Footer) with iOS Safe Area Padding */}
+        <div className="flex-none p-4 pt-3 pb-8 sm:pb-4 border-t border-zinc-800 bg-zinc-950/90 backdrop-blur-md">
+          {isEditing ? (
+            <div className="flex items-center gap-3">
+              <Button
+                onClick={handleCancelEdit}
+                variant="ghost"
+                className="flex-1 h-10 bg-zinc-900 text-zinc-300 hover:text-white hover:bg-zinc-800 text-xs border-none rounded-xl cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5 mr-1.5" />
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSave}
+                className="flex-1 h-10 bg-white text-black hover:bg-zinc-200 font-bold text-xs shadow-lg transition-colors border-none rounded-xl cursor-pointer"
+              >
+                <Check className="w-3.5 h-3.5 mr-1.5" />
+                Save Changes
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-2.5">
+              <Button
+                onClick={() => setIsEditing(true)}
+                className="w-full h-11 bg-white text-black hover:bg-zinc-200 font-bold border-none flex items-center justify-center gap-2 shadow-lg transition-colors rounded-xl cursor-pointer"
+              >
+                <Edit3 className="w-4 h-4" />
+                <span>Edit Profile</span>
+              </Button>
+              <p className="text-[10px] text-zinc-500 font-mono text-center">
+                DIALED PROFILE SYNC // LOCAL PERSISTENCE ACTIVE
+              </p>
+            </div>
+          )}
+        </div>
       </SheetContent>
     </Sheet>
   );

@@ -44,53 +44,59 @@ export function CalculationBreakdownDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg bg-[#111111] border border-zinc-800 text-zinc-100 p-6 sm:p-7 max-h-[88vh] overflow-y-auto">
-        <DialogHeader className="space-y-1.5 pb-2 text-left">
-          <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_8px_rgba(163,230,53,0.8)] shrink-0" />
-            <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-zinc-400">
-              TELEMETRY MATH ENGINE
-            </span>
-          </div>
-          <DialogTitle className="text-xl font-black text-white font-sans tracking-tight">
-            Calculation Breakdown
-          </DialogTitle>
-          <DialogDescription className="text-xs text-zinc-400">
-            Deterministic pressure equations calibrated for rider weight, tire casing, volume, and active ride conditions.
-          </DialogDescription>
-        </DialogHeader>
+      <DialogContent className="max-w-lg bg-[#111111] border border-zinc-800 text-zinc-100 p-0 max-h-[85dvh] flex flex-col overflow-hidden rounded-2xl sm:rounded-3xl">
+        {/* Rigid Top Header */}
+        <div className="flex-none p-5 sm:p-6 pb-3 border-b border-zinc-800/60 pr-12">
+          <DialogHeader className="space-y-1.5 pb-2 text-left">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_8px_rgba(163,230,53,0.8)] shrink-0" />
+              <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-zinc-400">
+                TELEMETRY MATH ENGINE
+              </span>
+            </div>
+            <DialogTitle className="text-xl font-black text-white font-sans tracking-tight">
+              Calculation Breakdown
+            </DialogTitle>
+            <DialogDescription className="text-xs text-zinc-400">
+              Deterministic pressure equations calibrated for rider weight, tire casing, volume, and active ride conditions.
+            </DialogDescription>
+          </DialogHeader>
 
-        {/* Wheel Selection Segmented Pill */}
-        <div className="grid grid-cols-2 gap-1 p-1 bg-zinc-900 rounded-xl my-1">
-          <button
-            type="button"
-            onClick={() => setActiveTab("front")}
-            className={`py-2 px-3 text-xs font-sans font-semibold rounded-lg flex items-center justify-center gap-2 transition-all ${
-              activeTab === "front"
-                ? "bg-zinc-800 text-white shadow-sm"
-                : "text-zinc-400 hover:text-zinc-200"
-            }`}
-          >
-            <span>FRONT TIRE</span>
-            <span className="font-mono text-[11px] text-lime-400">
-              {setup.frontPsi.toFixed(1)} PSI
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("rear")}
-            className={`py-2 px-3 text-xs font-sans font-semibold rounded-lg flex items-center justify-center gap-2 transition-all ${
-              activeTab === "rear"
-                ? "bg-zinc-800 text-white shadow-sm"
-                : "text-zinc-400 hover:text-zinc-200"
-            }`}
-          >
-            <span>REAR TIRE</span>
-            <span className="font-mono text-[11px] text-lime-400">
-              {setup.rearPsi.toFixed(1)} PSI
-            </span>
-          </button>
+          {/* Wheel Selection Segmented Pill */}
+          <div className="grid grid-cols-2 gap-1 p-1 bg-zinc-900 rounded-xl mt-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab("front")}
+              className={`py-2 px-3 text-xs font-sans font-semibold rounded-lg flex items-center justify-center gap-2 transition-all ${
+                activeTab === "front"
+                  ? "bg-zinc-800 text-white shadow-sm"
+                  : "text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              <span>FRONT TIRE</span>
+              <span className="font-mono text-[11px] text-lime-400">
+                {setup.frontPsi.toFixed(1)} PSI
+              </span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("rear")}
+              className={`py-2 px-3 text-xs font-sans font-semibold rounded-lg flex items-center justify-center gap-2 transition-all ${
+                activeTab === "rear"
+                  ? "bg-zinc-800 text-white shadow-sm"
+                  : "text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              <span>REAR TIRE</span>
+              <span className="font-mono text-[11px] text-lime-400">
+                {setup.rearPsi.toFixed(1)} PSI
+              </span>
+            </button>
+          </div>
         </div>
+
+        {/* Scrolling Ledger Body */}
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-5 overscroll-contain touch-pan-y">
 
         {/* Selected Wheel Header Card */}
         <div className="p-4 rounded-xl bg-zinc-900/60 border border-zinc-800/80 space-y-3">
@@ -184,13 +190,14 @@ export function CalculationBreakdownDialog({
             </ul>
           )}
         </div>
+      </div>
 
-        {/* Footer info */}
-        <div className="pt-3 border-t border-zinc-800/60 flex items-center justify-between text-[11px] text-zinc-400">
+        {/* Sticky Info Footer with iOS Safe Area Padding */}
+        <div className="flex-none p-4 pt-3 pb-8 sm:pb-4 border-t border-zinc-800 bg-zinc-950/90 backdrop-blur-md flex items-center justify-between text-[11px] text-zinc-400">
           <span>Chassis: {bike.category.replace("_", " ")}</span>
-          <span className="flex items-center gap-1 text-lime-400">
+          <span className="flex items-center gap-1.5 text-lime-400 font-semibold">
             <CheckCircle2 className="w-3.5 h-3.5" />
-            <span>Optimal Traction Sweet Spot</span>
+            <span>Optimal Sweet Spot</span>
           </span>
         </div>
       </DialogContent>

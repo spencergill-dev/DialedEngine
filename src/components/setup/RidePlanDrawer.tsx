@@ -193,56 +193,61 @@ export function RidePlanDrawer({
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent
         side="bottom"
-        className="max-h-[85vh] bg-[#111111] border-t border-zinc-800 text-zinc-100 p-6 sm:p-8 rounded-t-2xl overflow-y-auto max-w-2xl mx-auto inset-x-0"
+        className="max-h-[85dvh] bg-[#111111] border-t border-zinc-800 text-zinc-100 p-0 rounded-t-3xl overflow-hidden max-w-2xl mx-auto inset-x-0 flex flex-col"
       >
-        {/* Subtle iOS grab handle */}
-        <div className="w-12 h-1 bg-zinc-700/80 rounded-full mx-auto mb-4" />
+        {/* Rigid Top Header */}
+        <div className="flex-none p-5 sm:p-6 pb-2 border-b border-zinc-800/40">
+          {/* Subtle iOS grab handle */}
+          <div className="w-12 h-1 bg-zinc-700/80 rounded-full mx-auto mb-3" />
 
-        <SheetHeader className="text-left space-y-1.5 pb-2">
-          <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_8px_rgba(163,230,53,0.8)] shrink-0" />
-            <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-zinc-400">
-              LIVE CONDITIONS & FORECASTING
-            </span>
+          <SheetHeader className="text-left space-y-1.5 pb-2">
+            <div className="flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_8px_rgba(163,230,53,0.8)] shrink-0" />
+              <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-zinc-400">
+                LIVE CONDITIONS & FORECASTING
+              </span>
+            </div>
+            <SheetTitle className="text-xl font-black text-white font-sans tracking-tight">
+              Configure Ride Plan
+            </SheetTitle>
+            <SheetDescription className="text-xs text-zinc-400">
+              Select your destination and departure window to pull live Open-Meteo telemetry and auto-calibrate tire compliance.
+            </SheetDescription>
+          </SheetHeader>
+
+          {/* Tab Switcher */}
+          <div className="grid grid-cols-2 gap-1 p-1 bg-zinc-900 rounded-xl my-2">
+            <button
+              type="button"
+              onClick={() => setActiveTab("time")}
+              className={`py-2 px-3 text-xs font-sans font-semibold rounded-lg flex items-center justify-center gap-2 transition-all ${
+                activeTab === "time"
+                  ? "bg-zinc-800 text-white shadow-sm"
+                  : "text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              <Clock className="w-3.5 h-3.5" />
+              <span>Time & Forecast</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab("location")}
+              className={`py-2 px-3 text-xs font-sans font-semibold rounded-lg flex items-center justify-center gap-2 transition-all ${
+                activeTab === "location"
+                  ? "bg-zinc-800 text-white shadow-sm"
+                  : "text-zinc-400 hover:text-zinc-200"
+              }`}
+            >
+              <MapPin className="w-3.5 h-3.5" />
+              <span>Location</span>
+            </button>
           </div>
-          <SheetTitle className="text-xl font-black text-white font-sans tracking-tight">
-            Configure Ride Plan
-          </SheetTitle>
-          <SheetDescription className="text-xs text-zinc-400">
-            Select your destination and departure window to pull live Open-Meteo telemetry and auto-calibrate tire compliance.
-          </SheetDescription>
-        </SheetHeader>
-
-        {/* Tab Switcher */}
-        <div className="grid grid-cols-2 gap-1 p-1 bg-zinc-900 rounded-xl my-4">
-          <button
-            type="button"
-            onClick={() => setActiveTab("time")}
-            className={`py-2 px-3 text-xs font-sans font-semibold rounded-lg flex items-center justify-center gap-2 transition-all ${
-              activeTab === "time"
-                ? "bg-zinc-800 text-white shadow-sm"
-                : "text-zinc-400 hover:text-zinc-200"
-            }`}
-          >
-            <Clock className="w-3.5 h-3.5" />
-            <span>Time & Forecast</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => setActiveTab("location")}
-            className={`py-2 px-3 text-xs font-sans font-semibold rounded-lg flex items-center justify-center gap-2 transition-all ${
-              activeTab === "location"
-                ? "bg-zinc-800 text-white shadow-sm"
-                : "text-zinc-400 hover:text-zinc-200"
-            }`}
-          >
-            <MapPin className="w-3.5 h-3.5" />
-            <span>Location</span>
-          </button>
         </div>
 
-        {/* Tab 1: Time of Ride & Weather Forecast */}
-        {activeTab === "time" && (
+        {/* Scrolling Content Container */}
+        <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-4 overscroll-contain touch-pan-y">
+          {/* Tab 1: Time of Ride & Weather Forecast */}
+          {activeTab === "time" && (
           <div className="space-y-4">
             <div className="space-y-2">
               <div className="flex items-center justify-between">
@@ -545,18 +550,22 @@ export function RidePlanDrawer({
             </div>
           </div>
         )}
+      </div>
 
-        {/* Close Button / Bottom Action */}
-        <div className="pt-4 border-t border-zinc-800/60 mt-6 flex justify-end">
-          <button
-            type="button"
-            onClick={() => onOpenChange(false)}
-            className="px-5 py-2 bg-white text-black hover:bg-zinc-200 text-xs font-bold rounded-xl transition-colors cursor-pointer"
-          >
-            Apply Ride Plan
-          </button>
-        </div>
-      </SheetContent>
+      {/* Sticky Action Bar (Footer) with iOS Safe Area Padding */}
+      <div className="flex-none p-4 pt-3 pb-8 sm:pb-4 border-t border-zinc-800 bg-zinc-950/90 backdrop-blur-md flex items-center justify-between gap-3">
+        <span className="text-[11px] text-zinc-400 font-sans truncate pl-1">
+          {activeTab === "time" ? `${selectedTimePlan.label} • ${selectedTimePlan.temperature}°C` : selectedLocation}
+        </span>
+        <button
+          type="button"
+          onClick={() => onOpenChange(false)}
+          className="px-5 py-2.5 bg-white text-black hover:bg-zinc-200 text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-lg shrink-0"
+        >
+          Apply Ride Plan
+        </button>
+      </div>
+    </SheetContent>
     </Sheet>
   );
 }

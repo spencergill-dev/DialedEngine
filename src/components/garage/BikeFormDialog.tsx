@@ -115,18 +115,23 @@ export function BikeFormDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl bg-slate-900 border-slate-800 text-slate-100">
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <DialogHeader>
-            <DialogTitle className="text-lg font-semibold text-slate-100">
-              {bikeToEdit ? "Edit Bike Setup" : "Add Bike to Garage"}
-            </DialogTitle>
-            <DialogDescription className="text-xs text-slate-400">
-              Configure your bike specifications. The setup calculator will tailor exact tire and suspension pressures based on these components.
-            </DialogDescription>
-          </DialogHeader>
+      <DialogContent className="max-w-2xl bg-slate-900 border-slate-800 text-slate-100 max-h-[85dvh] flex flex-col p-0 overflow-hidden rounded-2xl sm:rounded-3xl">
+        <form onSubmit={handleSubmit} className="flex flex-col h-full max-h-[85dvh] overflow-hidden">
+          {/* Rigid Top Header */}
+          <div className="flex-none p-5 sm:p-6 pb-3 border-b border-slate-800/80 pr-12">
+            <DialogHeader className="text-left space-y-1">
+              <DialogTitle className="text-lg font-semibold text-slate-100">
+                {bikeToEdit ? "Edit Bike Setup" : "Add Bike to Garage"}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-slate-400">
+                Configure your bike specifications. The setup calculator will tailor exact tire and suspension pressures based on these components.
+              </DialogDescription>
+            </DialogHeader>
+          </div>
 
-          {/* Core Bike Details */}
+          {/* Scrolling Form Body */}
+          <div className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6 overscroll-contain touch-pan-y">
+            {/* Core Bike Details */}
           <div className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
@@ -430,20 +435,27 @@ export function BikeFormDialog({
               )}
             </div>
           </div>
+        </div>
 
-          <DialogFooter className="pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => onOpenChange(false)}
-              className="text-xs border-slate-800"
-            >
-              Cancel
-            </Button>
-            <Button type="submit" className="text-xs bg-slate-100 text-slate-900 hover:bg-slate-200">
-              {bikeToEdit ? "Save Changes" : "Add Bike"}
-            </Button>
-          </DialogFooter>
+          {/* Sticky Action Bar (Footer) with iOS Safe Area Padding */}
+          <div className="flex-none p-4 pt-3 pb-8 sm:pb-4 border-t border-slate-800 bg-slate-950/90 backdrop-blur-md">
+            <DialogFooter className="flex flex-row items-center justify-end gap-2.5 sm:space-x-0">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => onOpenChange(false)}
+                className="text-xs border-slate-800 px-4 h-10 rounded-xl cursor-pointer"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="text-xs bg-slate-100 text-slate-900 hover:bg-slate-200 font-bold px-5 h-10 rounded-xl cursor-pointer"
+              >
+                {bikeToEdit ? "Save Changes" : "Add Bike"}
+              </Button>
+            </DialogFooter>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
