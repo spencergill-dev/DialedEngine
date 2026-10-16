@@ -68,13 +68,42 @@ const MODEL_YEARS = [
 const WHEEL_SIZES: WheelSize[] = ["29\"", "27.5\"", "700c", "650b", "26\""];
 const FRAME_SIZES = ["XS", "S", "M", "L", "XL", "S2", "S3", "S4", "S5", "52cm", "54cm", "56cm", "58cm", "60cm"];
 
-const TIRE_WIDTH_OPTIONS: Record<BikeCategory, string[]> = {
-  full_suspension: ["2.3\"", "2.4\"", "2.5\" WT", "2.6\"", "2.8\""],
-  hardtail: ["2.2\"", "2.35\"", "2.4\"", "2.5\" WT", "2.6\""],
-  gravel: ["38mm", "40mm", "42mm", "45mm", "50mm"],
-  road: ["25mm", "28mm", "30mm", "32mm", "35mm"],
-  fat_bike: ["3.8\"", "4.0\"", "4.5\"", "4.8\""],
-};
+const INCH_TIRE_WIDTHS = [
+  "2.1\"",
+  "2.2\"",
+  "2.3\"",
+  "2.4\"",
+  "2.5\"",
+  "2.5\" WT",
+  "2.6\"",
+  "2.8\"",
+  "3.0\"",
+  "3.8\"",
+  "4.0\"",
+  "4.5\"",
+  "4.8\"",
+];
+
+const MM_TIRE_WIDTHS = [
+  "25mm",
+  "28mm",
+  "30mm",
+  "32mm",
+  "35mm",
+  "38mm",
+  "40mm",
+  "42mm",
+  "45mm",
+  "47mm",
+  "50mm",
+];
+
+function getTireWidthsForWheelSize(wheelSize: WheelSize): string[] {
+  if (wheelSize === "700c" || wheelSize === "650b") {
+    return MM_TIRE_WIDTHS;
+  }
+  return INCH_TIRE_WIDTHS;
+}
 
 const DEFAULT_FRONT_TIRE: TireSetup = {
   wheelSize: "29\"",
@@ -234,11 +263,33 @@ export function BikeBuilderDialog({
     }
   };
 
-  const currentWidthOptions = TIRE_WIDTH_OPTIONS[category] || TIRE_WIDTH_OPTIONS.full_suspension;
+  const handleFrontWheelSizeChange = (val: WheelSize) => {
+    setFrontTire((prev) => {
+      if (prev.wheelSize === val) return prev;
+      return { ...prev, wheelSize: val, width: "" };
+    });
+  };
+
+  const handleRearWheelSizeChange = (val: WheelSize) => {
+    setRearTire((prev) => {
+      if (prev.wheelSize === val) return prev;
+      return { ...prev, wheelSize: val, width: "" };
+    });
+  };
+
+  const frontWidthOptions = getTireWidthsForWheelSize(frontTire.wheelSize);
+  const rearWidthOptions = getTireWidthsForWheelSize(rearTire.wheelSize);
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
     if (!model.trim()) return;
+
+    const resolvedFrontWidth =
+      frontTire.width ||
+      (frontTire.wheelSize === "700c" || frontTire.wheelSize === "650b" ? "40mm" : "2.4\"");
+    const resolvedRearWidth =
+      rearTire.width ||
+      (rearTire.wheelSize === "700c" || rearTire.wheelSize === "650b" ? "40mm" : "2.4\"");
 
     onSave({
       brand,
@@ -251,8 +302,14 @@ export function BikeBuilderDialog({
       forkModel: forkModel.trim() || "Fork",
       forkTravel: Number(forkTravel) || 0,
       shockModel: category === "full_suspension" ? shockModel.trim() : "Rigid Frame",
-      frontTire,
-      rearTire,
+      frontTire: {
+        ...frontTire,
+        width: resolvedFrontWidth,
+      },
+      rearTire: {
+        ...rearTire,
+        width: resolvedRearWidth,
+      },
     });
     onOpenChange(false);
   };
@@ -474,9 +531,7 @@ export function BikeBuilderDialog({
                   <Label className="text-[11px] text-zinc-400">Wheel Size</Label>
                   <Select
                     value={frontTire.wheelSize}
-                    onValueChange={(val: WheelSize) =>
-                      setFrontTire((prev) => ({ ...prev, wheelSize: val }))
-                    }
+                    onValueChange={handleFrontWheelSizeChange}
                   >
                     <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-xs">
                       <SelectValue />
@@ -512,10 +567,10 @@ export function BikeBuilderDialog({
                     }
                   >
                     <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-xs">
-                      <SelectValue />
+                      <SelectValue placeholder="Select width" />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
-                      {currentWidthOptions.map((w) => (
+                      {frontWidthOptions.map((w) => (
                         <SelectItem key={w} value={w} className="text-xs">
                           {w}
                         </SelectItem>
@@ -610,9 +665,7 @@ export function BikeBuilderDialog({
                   <Label className="text-[11px] text-zinc-400">Wheel Size</Label>
                   <Select
                     value={rearTire.wheelSize}
-                    onValueChange={(val: WheelSize) =>
-                      setRearTire((prev) => ({ ...prev, wheelSize: val }))
-                    }
+                    onValueChange={handleRearWheelSizeChange}
                   >
                     <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-xs">
                       <SelectValue />
@@ -648,10 +701,10 @@ export function BikeBuilderDialog({
                     }
                   >
                     <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-xs">
-                      <SelectValue />
+                      <SelectValue placeholder="Select width" />
                     </SelectTrigger>
                     <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
-                      {currentWidthOptions.map((w) => (
+                      {rearWidthOptions.map((w) => (
                         <SelectItem key={w} value={w} className="text-xs">
                           {w}
                         </SelectItem>
