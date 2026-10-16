@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   Sun,
   Leaf,
@@ -13,6 +13,7 @@ import {
   Clock,
   Cloud,
   ChevronRight,
+  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -25,6 +26,12 @@ import {
   TIME_PRESETS,
   type RideTimePlan,
 } from "./RidePlanDrawer";
+import {
+  fetchLiveWeather,
+  getCurrentPosition,
+  PRESET_TRAIL_LOCATIONS,
+  type LocationCoordinates,
+} from "@/services/WeatherService";
 import type {
   Bike,
   RiderProfile,
@@ -79,14 +86,76 @@ export function RideSetupView({
 
   // Live Conditions & Forecasting State
   const [selectedLocation, setSelectedLocation] = useState(
-    "Current Location (Squamish, BC)"
+    PRESET_TRAIL_LOCATIONS[0].label
   );
+  const [currentCoords, setCurrentCoords] = useState<LocationCoordinates>({
+    latitude: PRESET_TRAIL_LOCATIONS[0].latitude,
+    longitude: PRESET_TRAIL_LOCATIONS[0].longitude,
+  });
+  const [timePresets, setTimePresets] = useState<RideTimePlan[]>(TIME_PRESETS);
   const [selectedTimePlan, setSelectedTimePlan] = useState<RideTimePlan>(
     TIME_PRESETS[0]
   );
   const [isRidePlanOpen, setIsRidePlanOpen] = useState(false);
   const [ridePlanTab, setRidePlanTab] = useState<"location" | "time">("time");
   const [autoWetNote, setAutoWetNote] = useState<string | null>(null);
+  const [isLoadingWeather, setIsLoadingWeather] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+
+  const loadWeatherForCoords = useCallback(
+    async (coords: LocationCoordinates) => {
+      setIsLoadingWeather(true);
+      try {
+        const weather = await fetchLiveWeather(coords.latitude, coords.longitude);
+        setTimePresets(weather.timePlans);
+        setSelectedTimePlan((prev) => {
+          const match =
+            weather.timePlans.find((p) => p.id === prev.id) ||
+            weather.timePlans[0];
+          return match;
+        });
+      } catch (err) {
+        console.error("Open-Meteo live weather fetch error:", err);
+      } finally {
+        setIsLoadingWeather(false);
+      }
+    },
+    []
+  );
+
+  // Initial load: fetch live weather from Open-Meteo on mount
+  useEffect(() => {
+    loadWeatherForCoords(currentCoords);
+  }, [loadWeatherForCoords, currentCoords]);
+
+  const handleUseCurrentLocation = async () => {
+    setIsLocating(true);
+    setLocationError(null);
+    try {
+      const pos = await getCurrentPosition();
+      const coords: LocationCoordinates = {
+        latitude: pos.latitude,
+        longitude: pos.longitude,
+      };
+      const label = `Current Location (${pos.latitude.toFixed(2)}°, ${pos.longitude.toFixed(2)}°)`;
+      setCurrentCoords(coords);
+      setSelectedLocation(label);
+      toast.success("Device GPS locked. Fetching Open-Meteo telemetry...");
+      await loadWeatherForCoords(coords);
+    } catch (err: any) {
+      console.warn("Geolocation acquisition failed:", err);
+      if (err?.code === 1) {
+        setLocationError("Location permission denied. Please allow location access or choose a trail center.");
+        toast.warning("Location access denied. Using Squamish, BC.");
+      } else {
+        setLocationError("GPS signal unavailable. Please select or search a trail center.");
+        toast.warning("GPS unavailable. Using Squamish, BC.");
+      }
+    } finally {
+      setIsLocating(false);
+    }
+  };
 
   const currentBike = bikes.find((b) => b.id === activeBikeId) || bikes[0];
   const setup = useDialedMath(
@@ -210,24 +279,33 @@ export function RideSetupView({
 
           {/* Forecasted Weather Readout */}
           <div className="flex items-center gap-2 text-xs text-zinc-400 flex-wrap">
-            {selectedTimePlan.weatherIcon === "rain" ? (
-              <CloudRain className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-            ) : selectedTimePlan.weatherIcon === "sun" ? (
-              <Sun className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-            ) : (
-              <Cloud className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-            )}
-            <span>
-              <span className="font-mono text-zinc-200 font-semibold">
-                {selectedTimePlan.temperature}°C
-              </span>{" "}
-              • {selectedTimePlan.weatherDescription} •{" "}
-              <span className="font-mono">{selectedTimePlan.pop}%</span> POP
-            </span>
-            {selectedTimePlan.temperature < 10 && (
-              <span className="text-[10px] font-sans font-semibold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                Cold Air +1.0 PSI
+            {isLoadingWeather ? (
+              <span className="flex items-center gap-1.5 text-zinc-400 text-xs">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-lime-400 shrink-0" />
+                <span>Syncing live Open-Meteo telemetry...</span>
               </span>
+            ) : (
+              <>
+                {selectedTimePlan.weatherIcon === "rain" ? (
+                  <CloudRain className="w-3.5 h-3.5 text-blue-400 shrink-0" />
+                ) : selectedTimePlan.weatherIcon === "sun" ? (
+                  <Sun className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                ) : (
+                  <Cloud className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                )}
+                <span>
+                  <span className="font-mono text-zinc-200 font-semibold">
+                    {selectedTimePlan.temperature}°C
+                  </span>{" "}
+                  • {selectedTimePlan.weatherDescription} •{" "}
+                  <span className="font-mono">{selectedTimePlan.pop}%</span> POP
+                </span>
+                {selectedTimePlan.temperature < 10 && (
+                  <span className="text-[10px] font-sans font-semibold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                    Cold Air +1.0 PSI
+                  </span>
+                )}
+              </>
             )}
           </div>
         </div>
@@ -752,14 +830,22 @@ export function RideSetupView({
         onOpenChange={setIsRidePlanOpen}
         initialTab={ridePlanTab}
         selectedLocation={selectedLocation}
-        onSelectLocation={(loc) => {
+        onSelectLocation={(loc, coords) => {
           setSelectedLocation(loc);
+          setCurrentCoords(coords);
+          loadWeatherForCoords(coords);
           setIsRidePlanOpen(false);
+          toast.success(`Location calibrated: ${loc}`);
         }}
         selectedTimePlan={selectedTimePlan}
         onSelectTimePlan={(plan, autoSetWet) => {
           handleSelectTimePlan(plan, autoSetWet);
         }}
+        timePresets={timePresets}
+        isLoadingWeather={isLoadingWeather}
+        onUseCurrentLocation={handleUseCurrentLocation}
+        isLocating={isLocating}
+        locationError={locationError}
       />
     </div>
   );
