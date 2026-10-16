@@ -11,13 +11,6 @@ import {
   RotateCw,
 } from "lucide-react";
 import { motion } from "framer-motion";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { useDialedMath } from "@/hooks/useDialedMath";
@@ -31,7 +24,7 @@ import type {
 interface RideSetupViewProps {
   bikes: Bike[];
   activeBikeId: string;
-  onSelectBike: (id: string) => void;
+  onSelectBike?: (id: string) => void;
   profile: RiderProfile;
   onSwitchToGarage: () => void;
 }
@@ -62,7 +55,7 @@ const RIDING_STYLES: {
 export function RideSetupView({
   bikes,
   activeBikeId,
-  onSelectBike,
+  onSelectBike: _onSelectBike,
   profile,
   onSwitchToGarage,
 }: RideSetupViewProps) {
@@ -127,40 +120,10 @@ export function RideSetupView({
           </div>
         </div>
 
-        {/* Pre-Ride Inputs: Bike Selector, Conditions, Style Intensity */}
-        <div className="grid grid-cols-1 md:grid-cols-12 gap-5 mt-6">
-          {/* Bicycle Selector */}
-          <div className="md:col-span-4 space-y-2 min-w-0">
-            <Label className="text-[11px] font-sans font-semibold uppercase tracking-wider text-zinc-400">
-              Selected Bicycle
-            </Label>
-            <Select value={currentBike.id} onValueChange={onSelectBike}>
-              <SelectTrigger className="h-11 w-full bg-zinc-900/60 border-none text-sm rounded-xl text-zinc-100 hover:bg-zinc-900 transition-colors whitespace-nowrap overflow-hidden [&>span]:truncate [&>span]:block [&>span]:min-w-0">
-                <SelectValue placeholder="Choose a bike" />
-              </SelectTrigger>
-              <SelectContent className="bg-zinc-900 border-none text-zinc-200">
-                {bikes.map((b) => {
-                  const bBrand =
-                    b.brand === "Custom" ? b.customBrand || "Custom" : b.brand;
-                  return (
-                    <SelectItem key={b.id} value={b.id} className="text-sm py-2">
-                      <div className="flex items-center gap-2 whitespace-nowrap truncate min-w-0">
-                        <span className="font-semibold text-zinc-100 truncate whitespace-nowrap">
-                          {bBrand} {b.model}
-                        </span>
-                        <span className="text-[11px] text-zinc-400 capitalize shrink-0 whitespace-nowrap">
-                          ({b.category.replace("_", " ")})
-                        </span>
-                      </div>
-                    </SelectItem>
-                  );
-                })}
-              </SelectContent>
-            </Select>
-          </div>
-
+        {/* Pre-Ride Inputs: Surface Conditions & Ride Intensity (2-Column Grid) */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mt-6">
           {/* Surface Conditions (Framer Motion Sliding Segment Pill) */}
-          <div className="md:col-span-4 space-y-2">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-[11px] font-sans font-semibold uppercase tracking-wider text-zinc-400">
                 Surface Conditions
@@ -214,7 +177,7 @@ export function RideSetupView({
           </div>
 
           {/* Ride Intensity (Framer Motion Sliding Segment Pill) */}
-          <div className="md:col-span-4 space-y-2">
+          <div className="space-y-2">
             <div className="flex items-center justify-between">
               <Label className="text-[11px] font-sans font-semibold uppercase tracking-wider text-zinc-400">
                 Ride Intensity

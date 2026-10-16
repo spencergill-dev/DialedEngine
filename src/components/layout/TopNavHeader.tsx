@@ -1,5 +1,11 @@
-import { Wrench, Compass } from "lucide-react";
+import { Wrench, Compass, Bike as BikeIcon } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+} from "@/components/ui/select";
 import type { RiderProfile, Bike } from "@/types/cycling";
 
 interface TopNavHeaderProps {
@@ -8,6 +14,7 @@ interface TopNavHeaderProps {
   activeBike: Bike | undefined;
   mainView: "setup" | "garage" | "profile";
   onSelectView: (view: "setup" | "garage" | "profile") => void;
+  onSelectBike?: (bikeId: string) => void;
 }
 
 export function TopNavHeader({
@@ -16,14 +23,16 @@ export function TopNavHeader({
   activeBike,
   mainView,
   onSelectView,
+  onSelectBike,
 }: TopNavHeaderProps) {
   const displayName = profile.displayName?.trim() || "Spencer";
-  const initials = displayName
-    .split(" ")
-    .map((n) => n[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase() || "SP";
+  const initials =
+    displayName
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "SP";
 
   const displayBrand =
     activeBike?.brand === "Custom"
@@ -32,9 +41,9 @@ export function TopNavHeader({
 
   return (
     <header className="sticky top-0 z-40 w-full bg-[#111111]/90 backdrop-blur-xl border-b border-zinc-800/50 transition-all">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
         {/* Left: Brand Mark */}
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 shrink-0">
           <button
             onClick={() => onSelectView("setup")}
             className="flex items-center gap-2.5 text-left group focus:outline-none"
@@ -60,21 +69,59 @@ export function TopNavHeader({
           </button>
         </div>
 
-        {/* Center/Active Bike Pill (Visible on lg+) */}
-        <div className="hidden lg:flex items-center gap-2 px-3 py-1 rounded-full bg-zinc-900/60 text-xs text-zinc-400">
-          <span className="w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_6px_rgba(163,230,53,0.6)]" />
-          <span className="text-zinc-500">Active Ride:</span>
-          <span className="text-zinc-200 font-medium">
-            {displayBrand} {activeBike?.model || "Bike"}
-          </span>
-          <span className="text-zinc-600">•</span>
-          <span className="text-zinc-400 font-sans text-[11px]"><span className="font-mono">{profile.weight}</span> LBS</span>
-        </div>
+        {/* Center: Quick-Swap Active Bike Selector Pill */}
+        {bikes.length > 0 && (
+          <div className="flex items-center justify-center min-w-0 max-w-[170px] xs:max-w-[210px] sm:max-w-[260px] md:max-w-xs">
+            <Select
+              value={activeBike?.id}
+              onValueChange={(bikeId) => onSelectBike?.(bikeId)}
+            >
+              <SelectTrigger
+                className="h-8 w-auto max-w-full bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-800/90 text-xs rounded-full px-2.5 sm:px-3 py-1 text-zinc-200 transition-all gap-1.5 focus:ring-lime-400/60 shadow-sm"
+                title="Quick-Swap Active Bike"
+              >
+                <div className="flex items-center gap-1.5 truncate min-w-0">
+                  <BikeIcon className="w-3.5 h-3.5 text-lime-400 shrink-0" />
+                  <span className="font-semibold text-zinc-100 truncate text-[11px] sm:text-xs">
+                    {activeBike ? `${displayBrand} ${activeBike.model}` : "Select Bike"}
+                  </span>
+                </div>
+              </SelectTrigger>
+              <SelectContent className="bg-zinc-900 border border-zinc-800 text-zinc-200 rounded-xl shadow-2xl min-w-[220px]">
+                {bikes.map((b) => {
+                  const bBrand =
+                    b.brand === "Custom" ? b.customBrand || "Custom" : b.brand;
+                  const isSelected = b.id === activeBike?.id;
+                  return (
+                    <SelectItem
+                      key={b.id}
+                      value={b.id}
+                      className="text-xs py-2 cursor-pointer focus:bg-zinc-800 focus:text-white"
+                    >
+                      <div className="flex items-center justify-between w-full gap-3">
+                        <span
+                          className={`font-semibold truncate ${
+                            isSelected ? "text-lime-400" : "text-zinc-200"
+                          }`}
+                        >
+                          {bBrand} {b.model}
+                        </span>
+                        <span className="text-[10px] font-sans text-zinc-500 uppercase tracking-wider shrink-0">
+                          {b.category.replace("_", " ")}
+                        </span>
+                      </div>
+                    </SelectItem>
+                  );
+                })}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
 
-        {/* Right Navigation & Profile Controls (Hidden on mobile md:hidden, visible on md+) */}
-        <div className="hidden md:flex items-center gap-2 sm:gap-3">
-          {/* Main View Toggle Buttons */}
-          <div className="flex items-center p-1 rounded-xl bg-zinc-900/80">
+        {/* Right Navigation & Profile Controls */}
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          {/* Main View Toggle Buttons (Hidden on mobile md:hidden, visible on desktop) */}
+          <div className="hidden md:flex items-center p-1 rounded-xl bg-zinc-900/80">
             <button
               onClick={() => onSelectView("setup")}
               className={`flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
@@ -105,25 +152,31 @@ export function TopNavHeader({
             </button>
           </div>
 
-          {/* Profile Trigger Button */}
+          {/* User Profile Avatar Trigger (Sleek circle on the far right across ALL viewports) */}
           <button
             onClick={() => onSelectView("profile")}
-            className={`flex items-center gap-2 p-1 pl-1.5 sm:pl-2 rounded-full transition-all text-left ${
+            className={`flex items-center gap-2 p-1 sm:pl-2 rounded-full transition-all text-left group ${
               mainView === "profile"
-                ? "bg-zinc-800 ring-1 ring-lime-400/60 shadow-sm"
-                : "bg-zinc-900/60 hover:bg-zinc-800/80"
+                ? "bg-zinc-800 ring-1 ring-lime-400/80 shadow-sm"
+                : "hover:bg-zinc-850"
             }`}
             title="Rider Profile"
+            aria-label="User Profile"
           >
             <div className="hidden lg:block text-right pr-1">
               <span className="text-xs font-semibold text-zinc-200 block leading-tight">
                 {displayName}
               </span>
               <span className="text-[10px] text-zinc-400 font-sans block">
-                <span className="font-mono">{profile.heightInches ? `${Math.floor(profile.heightInches / 12)}' ${profile.heightInches % 12}"` : "71\""}</span> • <span className="font-mono">{profile.weight}</span> lbs
+                <span className="font-mono">
+                  {profile.heightInches
+                    ? `${Math.floor(profile.heightInches / 12)}' ${profile.heightInches % 12}"`
+                    : '71"'}
+                </span>{" "}
+                • <span className="font-mono">{profile.weight}</span> lbs
               </span>
             </div>
-            <Avatar className="h-8 w-8">
+            <Avatar className="h-8 w-8 ring-1 ring-white/10 group-hover:ring-lime-400/60 transition-all shrink-0">
               <AvatarFallback className="bg-zinc-800 text-lime-400 font-bold text-xs">
                 {initials}
               </AvatarFallback>

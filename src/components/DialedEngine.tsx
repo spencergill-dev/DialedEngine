@@ -31,6 +31,7 @@ export function DialedEngine() {
         activeBike={activeBike}
         mainView={mainView}
         onSelectView={setMainView}
+        onSelectBike={setActiveBikeId}
       />
 
       {/* Main View Area (with bottom clearance for mobile fixed tab bar) */}
