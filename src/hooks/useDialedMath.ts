@@ -54,19 +54,112 @@ function calculateTireModifiers(
     });
   }
 
-  // 5. Strict Modifier: If Surface is 'Wet' (-1.5 PSI)
-  if (condition === "wet_slippery") {
-    mods.push({
-      label: "Wet Surface",
-      delta: -1.5,
-      description: "Dropped 1.5 PSI for wet & slick surface mechanical grip",
-    });
-  } else if (condition === "bike_park") {
-    mods.push({
-      label: "Bike Park",
-      delta: 2.0,
-      description: "Added +2.0 PSI to resist high-speed berm compressions and rim strikes",
-    });
+  // 5. Strict Surface Condition Modifiers
+  switch (condition) {
+    case "wet_slippery":
+    case "wet_mud":
+    case "fat_mud":
+      mods.push({
+        label: "Wet / Mud",
+        delta: -1.5,
+        description: "Dropped 1.5 PSI for slick mud & wet surface mechanical grip",
+      });
+      break;
+    case "wet_tarmac":
+    case "wet_rain":
+      mods.push({
+        label: "Wet Surface",
+        delta: -3.0,
+        description: "Dropped 3.0 PSI for wet pavement safety & braking grip",
+      });
+      break;
+    case "bike_park":
+      mods.push({
+        label: "Bike Park",
+        delta: 2.0,
+        description: "Added +2.0 PSI to resist high-speed berm compressions and rim strikes",
+      });
+      break;
+    case "snow_ice":
+      mods.push({
+        label: "Snow / Ice",
+        delta: -2.0,
+        description: "Dropped 2.0 PSI to maximize tread siping contact on frozen terrain",
+      });
+      break;
+    case "packed_snow":
+      mods.push({
+        label: "Packed Snow",
+        delta: -1.0,
+        description: "Dropped 1.0 PSI for groomed snow floatation and bite",
+      });
+      break;
+    case "deep_snow":
+      mods.push({
+        label: "Deep Snow",
+        delta: -2.5,
+        description: "Dropped 2.5 PSI for ultra-low pressure floatation over unpacked snow",
+      });
+      break;
+    case "sand":
+      mods.push({
+        label: "Sand Floatation",
+        delta: -2.0,
+        description: "Dropped 2.0 PSI to widen tire footprint and prevent sand trenching",
+      });
+      break;
+    case "hardpack_pavement":
+      mods.push({
+        label: "Pavement / Hardpack",
+        delta: 2.0,
+        description: "Added +2.0 PSI for fast rolling efficiency on smooth tarmac",
+      });
+      break;
+    case "loose_chunky":
+      mods.push({
+        label: "Loose / Chunky",
+        delta: -2.0,
+        description: "Dropped 2.0 PSI to reduce tire deflection over loose rocks",
+      });
+      break;
+    case "smooth_asphalt":
+      mods.push({
+        label: "Smooth Asphalt",
+        delta: 3.0,
+        description: "Added +3.0 PSI for low rolling resistance on pristine asphalt",
+      });
+      break;
+    case "rough_chipseal":
+      mods.push({
+        label: "Rough / Chipseal",
+        delta: -3.0,
+        description: "Dropped 3.0 PSI to damp road buzz and reduce fatigue",
+      });
+      break;
+    case "cobblestones":
+      mods.push({
+        label: "Cobblestones",
+        delta: -6.0,
+        description: "Dropped 6.0 PSI for compliance over harsh stone pavé",
+      });
+      break;
+    case "rough_potholes":
+      mods.push({
+        label: "Potholes / Rough",
+        delta: -2.0,
+        description: "Dropped 2.0 PSI for shock absorption over urban pavement cracks",
+      });
+      break;
+    case "winter_slush":
+      mods.push({
+        label: "Winter / Slush",
+        delta: -4.0,
+        description: "Dropped 4.0 PSI to broaden contact patch in slush and ice",
+      });
+      break;
+    default:
+      // Nominal/dry conditions: 0 delta
+      break;
   }
 
   // 6. Cold Ambient Temperature Compensation (<10°C adds +1.0 PSI)
@@ -123,15 +216,32 @@ export function useDialedMath(
       };
     }
 
-    // 1. "Minty" Deterministic Baseline Physics
+    // 1. "Minty" Deterministic Baseline Physics by Discipline
+    const discipline =
+      bike.discipline ||
+      (bike.category === "road"
+        ? "road"
+        : bike.category === "urban_commuter"
+        ? "urban_commuter"
+        : bike.category === "gravel"
+        ? "gravel"
+        : bike.category === "fat_bike"
+        ? "fat_bike"
+        : "mountain");
+
     let baseFrontPsi = 21.0;
     let baseRearPsi = 23.0;
 
-    switch (bike.category) {
+    switch (discipline) {
       case "road":
         // Road Baseline: Front = (Weight / 10) + 55, Rear = (Weight / 10) + 57
         baseFrontPsi = weight / 10 + 55;
         baseRearPsi = weight / 10 + 57;
+        break;
+      case "urban_commuter":
+        // Commuter Baseline: Front = (Weight / 10) + 35, Rear = (Weight / 10) + 38
+        baseFrontPsi = weight / 10 + 35;
+        baseRearPsi = weight / 10 + 38;
         break;
       case "gravel":
         // Gravel Baseline: Front = (Weight / 10) + 15, Rear = (Weight / 10) + 17
@@ -143,8 +253,7 @@ export function useDialedMath(
         baseFrontPsi = weight / 30 + 2;
         baseRearPsi = weight / 30 + 4;
         break;
-      case "full_suspension":
-      case "hardtail":
+      case "mountain":
       default:
         // MTB Baseline: Front = (Weight / 10) + 1, Rear = (Weight / 10) + 3
         baseFrontPsi = weight / 10 + 1;
@@ -171,15 +280,30 @@ export function useDialedMath(
     const frontTotalDelta = frontModifiers.reduce((acc, m) => acc + m.delta, 0);
     const rearTotalDelta = rearModifiers.reduce((acc, m) => acc + m.delta, 0);
 
-    const minFloor = bike.category === "fat_bike" ? 4.0 : 12.0;
+    const minFloor =
+      discipline === "fat_bike"
+        ? 3.5
+        : discipline === "road"
+        ? 45.0
+        : discipline === "urban_commuter"
+        ? 30.0
+        : 12.0;
+
     const frontPsi = Math.max(minFloor, baseFrontPsi + frontTotalDelta);
     const rearPsi = Math.max(minFloor + 1, baseRearPsi + rearTotalDelta);
 
-    // 3. Suspension Calculations
+    // 3. Suspension Calculations Strictly Read Suspension Layout
+    const suspensionLayout =
+      bike.suspensionLayout ||
+      (bike.category === "full_suspension"
+        ? "full_suspension"
+        : bike.category === "hardtail"
+        ? "front_suspension"
+        : "rigid");
+
     const hasForkSuspension =
-      (bike.category === "full_suspension" || bike.category === "hardtail") &&
-      bike.forkTravel > 0;
-    const hasRearSuspension = bike.category === "full_suspension";
+      suspensionLayout !== "rigid" && bike.forkTravel > 0;
+    const hasRearSuspension = suspensionLayout === "full_suspension";
 
     let styleSuspensionFactor = 0;
     if (activeRidingStyle === "aggressive_heavy") {

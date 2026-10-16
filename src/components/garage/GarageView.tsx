@@ -185,9 +185,14 @@ export function GarageView({
                     <div className="flex items-center gap-2 text-xs text-zinc-400">
                       <span className="font-mono text-[11px]">{bike.year}</span>
                       <span>•</span>
-                      <span className="text-[10px] font-sans font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400">
-                        {bike.category.replace("_", " ")}
+                      <span className="text-[10px] font-sans font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-300">
+                        {(bike.discipline || bike.category || "mountain").replace("_", " ")}
                       </span>
+                      {bike.suspensionLayout && (
+                        <span className="text-[10px] font-sans font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-400">
+                          {bike.suspensionLayout.replace("_", " ")}
+                        </span>
+                      )}
                       {bike.isEBike && (
                         <span className="text-[10px] font-sans font-semibold px-1.5 py-0.5 rounded bg-zinc-900 text-amber-300 flex items-center gap-1">
                           <Zap className="w-2.5 h-2.5 text-amber-400" />

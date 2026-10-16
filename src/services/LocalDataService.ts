@@ -15,6 +15,54 @@ export const DEFAULT_PROFILE: RiderProfile = {
   ridingStyle: "neutral",
 };
 
+function normalizeBike(bike: any): Bike {
+  let discipline = bike.discipline;
+  let suspensionLayout = bike.suspensionLayout;
+
+  if (!discipline) {
+    if (bike.category === "full_suspension" || bike.category === "hardtail") {
+      discipline = "mountain";
+    } else if (bike.category === "gravel") {
+      discipline = "gravel";
+    } else if (bike.category === "road") {
+      discipline = "road";
+    } else if (bike.category === "fat_bike") {
+      discipline = "fat_bike";
+    } else if (bike.category === "urban_commuter") {
+      discipline = "urban_commuter";
+    } else {
+      discipline = "mountain";
+    }
+  }
+
+  if (!suspensionLayout) {
+    if (bike.category === "full_suspension") {
+      suspensionLayout = "full_suspension";
+    } else if (bike.category === "hardtail") {
+      suspensionLayout = "front_suspension";
+    } else if (bike.category === "gravel" || bike.category === "road") {
+      suspensionLayout = "rigid";
+    } else if (bike.category === "fat_bike") {
+      suspensionLayout = Number(bike.forkTravel) > 0 ? "front_suspension" : "rigid";
+    } else {
+      suspensionLayout = Number(bike.forkTravel) > 0 ? "front_suspension" : "rigid";
+    }
+  }
+
+  return {
+    ...bike,
+    discipline,
+    suspensionLayout,
+    category:
+      bike.category ||
+      (discipline === "mountain"
+        ? suspensionLayout === "full_suspension"
+          ? "full_suspension"
+          : "hardtail"
+        : discipline),
+  };
+}
+
 export const DEFAULT_BIKES: Bike[] = [
   {
     id: "bike-mtb-1",
@@ -22,6 +70,8 @@ export const DEFAULT_BIKES: Bike[] = [
     model: "Megatower CC",
     year: "2024",
     frameSize: "L",
+    discipline: "mountain",
+    suspensionLayout: "full_suspension",
     category: "full_suspension",
     isEBike: false,
     forkModel: "Fox 38 Factory Grip2",
@@ -52,6 +102,8 @@ export const DEFAULT_BIKES: Bike[] = [
     model: "Turbo Levo Comp",
     year: "2024",
     frameSize: "S4",
+    discipline: "mountain",
+    suspensionLayout: "full_suspension",
     category: "full_suspension",
     isEBike: true,
     forkModel: "Fox 36 Rhythm E-Tuned",
@@ -82,6 +134,8 @@ export const DEFAULT_BIKES: Bike[] = [
     model: "Grizl CF SL 8",
     year: "2024",
     frameSize: "M",
+    discipline: "gravel",
+    suspensionLayout: "rigid",
     category: "gravel",
     isEBike: false,
     forkModel: "Canyon FK0087 Carbon Rigid",
@@ -112,6 +166,8 @@ export const DEFAULT_BIKES: Bike[] = [
     model: "Tarmac SL8 Pro",
     year: "2024",
     frameSize: "56cm",
+    discipline: "road",
+    suspensionLayout: "rigid",
     category: "road",
     isEBike: false,
     forkModel: "FACT 12R Carbon Rigid",
@@ -134,6 +190,70 @@ export const DEFAULT_BIKES: Bike[] = [
       casing: "light",
       hasInsert: false,
       isTubeless: true,
+    },
+  },
+  {
+    id: "bike-fat-5",
+    brand: "Trek",
+    model: "Farley 9.6",
+    year: "2024",
+    frameSize: "L",
+    discipline: "fat_bike",
+    suspensionLayout: "rigid",
+    category: "fat_bike",
+    isEBike: false,
+    forkModel: "Bontrager Haru Pro Carbon",
+    forkTravel: 0,
+    shockModel: "Rigid Frame",
+    frontTire: {
+      wheelSize: "27.5\"",
+      manufacturer: "Bontrager",
+      model: "Barbegazi",
+      width: "4.5\"",
+      casing: "light",
+      hasInsert: false,
+      isTubeless: true,
+    },
+    rearTire: {
+      wheelSize: "27.5\"",
+      manufacturer: "Bontrager",
+      model: "Barbegazi",
+      width: "4.5\"",
+      casing: "light",
+      hasInsert: false,
+      isTubeless: true,
+    },
+  },
+  {
+    id: "bike-commuter-6",
+    brand: "Trek",
+    model: "FX 3 Disc",
+    year: "2024",
+    frameSize: "L",
+    discipline: "urban_commuter",
+    suspensionLayout: "rigid",
+    category: "urban_commuter",
+    isEBike: false,
+    forkModel: "FX Carbon Rigid Fork",
+    forkTravel: 0,
+    shockModel: "Rigid Frame",
+    frontTire: {
+      wheelSize: "700c",
+      manufacturer: "Bontrager",
+      model: "H2 Hard-Case Lite",
+      width: "35mm",
+      casing: "standard",
+      hasInsert: false,
+      isTubeless: false,
+    },
+    rearTire: {
+      wheelSize: "700c",
+      manufacturer: "Bontrager",
+      model: "H2 Hard-Case Lite",
+      width: "35mm",
+      casing: "standard",
+      hasInsert: false,
+      isTubeless: false,
     },
   },
 ];
@@ -176,7 +296,10 @@ export class LocalDataService implements IDataService {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.BIKES);
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) {
+          return parsed.map(normalizeBike);
+        }
       }
       // Seed default bikes on initial launch
       localStorage.setItem(STORAGE_KEYS.BIKES, JSON.stringify(DEFAULT_BIKES));

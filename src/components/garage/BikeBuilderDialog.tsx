@@ -24,7 +24,8 @@ import { Combobox } from "@/components/ui/combobox";
 import { POPULAR_FORKS, POPULAR_SHOCKS } from "@/data/suspensionPresets";
 import type {
   Bike,
-  BikeCategory,
+  BikeDiscipline,
+  SuspensionLayout,
   WheelSize,
   TireCasing,
   TireSetup,
@@ -71,6 +72,10 @@ const WHEEL_SIZES: WheelSize[] = ["29\"", "27.5\"", "700c", "650b", "26\""];
 const FRAME_SIZES = ["XS", "S", "M", "L", "XL", "S2", "S3", "S4", "S5", "52cm", "54cm", "56cm", "58cm", "60cm"];
 
 const INCH_TIRE_WIDTHS = [
+  "1.5\"",
+  "1.75\"",
+  "1.9\"",
+  "2.0\"",
   "2.1\"",
   "2.2\"",
   "2.3\"",
@@ -82,11 +87,15 @@ const INCH_TIRE_WIDTHS = [
   "3.0\"",
   "3.8\"",
   "4.0\"",
+  "4.2\"",
   "4.5\"",
+  "4.6\"",
   "4.8\"",
+  "5.0\"",
 ];
 
 const MM_TIRE_WIDTHS = [
+  "23mm",
   "25mm",
   "28mm",
   "30mm",
@@ -98,6 +107,7 @@ const MM_TIRE_WIDTHS = [
   "45mm",
   "47mm",
   "50mm",
+  "55mm",
 ];
 
 function getTireWidthsForWheelSize(wheelSize: WheelSize): string[] {
@@ -138,7 +148,8 @@ export function BikeBuilderDialog({
   const [model, setModel] = useState("");
   const [year, setYear] = useState<string>("2024");
   const [frameSize, setFrameSize] = useState("L");
-  const [category, setCategory] = useState<BikeCategory>("full_suspension");
+  const [discipline, setDiscipline] = useState<BikeDiscipline>("mountain");
+  const [suspensionLayout, setSuspensionLayout] = useState<SuspensionLayout>("full_suspension");
   const [isEBike, setIsEBike] = useState(false);
 
   const [forkModel, setForkModel] = useState("Fox 38 Factory Grip2");
@@ -155,7 +166,26 @@ export function BikeBuilderDialog({
       setModel(bikeToEdit.model);
       setYear(String(bikeToEdit.year || "2024"));
       setFrameSize(bikeToEdit.frameSize || "L");
-      setCategory(bikeToEdit.category);
+      setDiscipline(
+        bikeToEdit.discipline ||
+          (bikeToEdit.category === "road"
+            ? "road"
+            : bikeToEdit.category === "urban_commuter"
+            ? "urban_commuter"
+            : bikeToEdit.category === "gravel"
+            ? "gravel"
+            : bikeToEdit.category === "fat_bike"
+            ? "fat_bike"
+            : "mountain")
+      );
+      setSuspensionLayout(
+        bikeToEdit.suspensionLayout ||
+          (bikeToEdit.category === "full_suspension"
+            ? "full_suspension"
+            : bikeToEdit.category === "hardtail"
+            ? "front_suspension"
+            : "rigid")
+      );
       setIsEBike(bikeToEdit.isEBike);
       setForkModel(bikeToEdit.forkModel);
       setForkTravel(bikeToEdit.forkTravel);
@@ -168,7 +198,8 @@ export function BikeBuilderDialog({
       setModel("");
       setYear("2024");
       setFrameSize("L");
-      setCategory("full_suspension");
+      setDiscipline("mountain");
+      setSuspensionLayout("full_suspension");
       setIsEBike(false);
       setForkModel("Fox 38 Factory Grip2");
       setForkTravel(170);
@@ -178,10 +209,11 @@ export function BikeBuilderDialog({
     }
   }, [bikeToEdit, open]);
 
-  // Adjust defaults when category switches
-  const handleCategoryChange = (newCat: BikeCategory) => {
-    setCategory(newCat);
-    if (newCat === "road") {
+  // Adjust defaults when discipline switches
+  const handleDisciplineChange = (newDisc: BikeDiscipline) => {
+    setDiscipline(newDisc);
+    if (newDisc === "road") {
+      setSuspensionLayout("rigid");
       setFrontTire((prev) => ({
         ...prev,
         wheelSize: "700c",
@@ -197,7 +229,8 @@ export function BikeBuilderDialog({
       setForkTravel(0);
       setForkModel("Rigid Carbon Fork");
       setShockModel("Rigid Frame");
-    } else if (newCat === "gravel") {
+    } else if (newDisc === "gravel") {
+      setSuspensionLayout("rigid");
       setFrontTire((prev) => ({
         ...prev,
         wheelSize: "700c",
@@ -213,7 +246,8 @@ export function BikeBuilderDialog({
       setForkTravel(0);
       setForkModel("Rigid Carbon Fork");
       setShockModel("Rigid Frame");
-    } else if (newCat === "fat_bike") {
+    } else if (newDisc === "fat_bike") {
+      setSuspensionLayout("rigid");
       setFrontTire((prev) => ({
         ...prev,
         wheelSize: "26\"",
@@ -229,24 +263,26 @@ export function BikeBuilderDialog({
       setForkTravel(0);
       setForkModel("Rigid Fat Fork");
       setShockModel("Rigid Frame");
-    } else if (newCat === "hardtail") {
+    } else if (newDisc === "urban_commuter") {
+      setSuspensionLayout("rigid");
       setFrontTire((prev) => ({
         ...prev,
-        wheelSize: "29\"",
-        width: "2.4\"",
+        wheelSize: "700c",
+        width: "35mm",
         casing: "standard",
       }));
       setRearTire((prev) => ({
         ...prev,
-        wheelSize: "29\"",
-        width: "2.4\"",
+        wheelSize: "700c",
+        width: "35mm",
         casing: "standard",
       }));
-      setForkTravel(130);
-      setForkModel("RockShox Pike 130mm");
-      setShockModel("Hardtail Frame");
+      setForkTravel(0);
+      setForkModel("Rigid Commuter Fork");
+      setShockModel("Rigid Frame");
     } else {
-      // Full Suspension MTB
+      // Mountain
+      setSuspensionLayout("full_suspension");
       setFrontTire((prev) => ({
         ...prev,
         wheelSize: "29\"",
@@ -262,6 +298,31 @@ export function BikeBuilderDialog({
       setForkTravel(160);
       setForkModel("Fox 38 Factory 160mm");
       setShockModel("Fox Float X2");
+    }
+  };
+
+  const handleSuspensionLayoutChange = (newLayout: SuspensionLayout) => {
+    setSuspensionLayout(newLayout);
+    if (newLayout === "rigid") {
+      setForkTravel(0);
+      setForkModel("Rigid Fork");
+      setShockModel("Rigid Frame");
+    } else if (newLayout === "front_suspension") {
+      setForkTravel((prev) => (prev > 0 ? prev : 130));
+      setForkModel((prev) =>
+        prev.toLowerCase().includes("rigid") ? "RockShox Pike 130mm" : prev
+      );
+      setShockModel("Hardtail Frame");
+    } else if (newLayout === "full_suspension") {
+      setForkTravel((prev) => (prev > 0 ? prev : 160));
+      setForkModel((prev) =>
+        prev.toLowerCase().includes("rigid") ? "Fox 38 Factory 160mm" : prev
+      );
+      setShockModel((prev) =>
+        prev.toLowerCase().includes("frame") || prev.toLowerCase().includes("rigid")
+          ? "Fox Float X2"
+          : prev
+      );
     }
   };
 
@@ -299,11 +360,18 @@ export function BikeBuilderDialog({
       model: model.trim(),
       year,
       frameSize,
-      category,
+      discipline,
+      suspensionLayout,
+      category:
+        discipline === "mountain"
+          ? suspensionLayout === "full_suspension"
+            ? "full_suspension"
+            : "hardtail"
+          : (discipline as any),
       isEBike,
-      forkModel: forkModel.trim() || "Fork",
-      forkTravel: Number(forkTravel) || 0,
-      shockModel: category === "full_suspension" ? shockModel.trim() : "Rigid Frame",
+      forkModel: suspensionLayout === "rigid" ? "Rigid Fork" : forkModel.trim() || "Fork",
+      forkTravel: suspensionLayout === "rigid" ? 0 : Number(forkTravel) || 0,
+      shockModel: suspensionLayout === "full_suspension" ? shockModel.trim() : "Rigid Frame",
       frontTire: {
         ...frontTire,
         width: resolvedFrontWidth,
@@ -316,9 +384,7 @@ export function BikeBuilderDialog({
     onOpenChange(false);
   };
 
-  const hasSuspensionFork =
-    category === "full_suspension" || category === "hardtail";
-  const hasRearShock = category === "full_suspension";
+  const hasRearShock = suspensionLayout === "full_suspension";
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -355,28 +421,22 @@ export function BikeBuilderDialog({
               1. Core Details & Discipline
             </h4>
 
-            {/* Category Selector */}
+            {/* Discipline Selector */}
             <div className="space-y-1.5">
-              <Label className="text-xs text-zinc-300">Bicycle Category</Label>
+              <Label className="text-xs text-zinc-300">Discipline</Label>
               <ToggleGroup
                 type="single"
-                value={category}
+                value={discipline}
                 onValueChange={(val) => {
-                  if (val) handleCategoryChange(val as BikeCategory);
+                  if (val) handleDisciplineChange(val as BikeDiscipline);
                 }}
                 className="w-full grid grid-cols-2 sm:grid-cols-5 gap-1.5 p-1 bg-zinc-900/80 rounded-xl ring-1 ring-white/5"
               >
                 <ToggleGroupItem
-                  value="full_suspension"
+                  value="mountain"
                   className="py-1.5 px-2 text-xs font-medium data-[state=on]:bg-zinc-800 data-[state=on]:text-zinc-100"
                 >
-                  Full Susp
-                </ToggleGroupItem>
-                <ToggleGroupItem
-                  value="hardtail"
-                  className="py-1.5 px-2 text-xs font-medium data-[state=on]:bg-zinc-800 data-[state=on]:text-zinc-100"
-                >
-                  Hardtail
+                  Mountain
                 </ToggleGroupItem>
                 <ToggleGroupItem
                   value="gravel"
@@ -395,6 +455,44 @@ export function BikeBuilderDialog({
                   className="py-1.5 px-2 text-xs font-medium data-[state=on]:bg-zinc-800 data-[state=on]:text-zinc-100"
                 >
                   Fat Bike
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  value="urban_commuter"
+                  className="py-1.5 px-2 text-xs font-medium data-[state=on]:bg-zinc-800 data-[state=on]:text-zinc-100"
+                >
+                  Commuter
+                </ToggleGroupItem>
+              </ToggleGroup>
+            </div>
+
+            {/* Suspension Layout Selector */}
+            <div className="space-y-1.5">
+              <Label className="text-xs text-zinc-300">Suspension Layout</Label>
+              <ToggleGroup
+                type="single"
+                value={suspensionLayout}
+                onValueChange={(val) => {
+                  if (val) handleSuspensionLayoutChange(val as SuspensionLayout);
+                }}
+                className="w-full grid grid-cols-3 gap-1.5 p-1 bg-zinc-900/80 rounded-xl ring-1 ring-white/5"
+              >
+                <ToggleGroupItem
+                  value="rigid"
+                  className="py-1.5 px-2 text-xs font-medium data-[state=on]:bg-zinc-800 data-[state=on]:text-zinc-100"
+                >
+                  Rigid
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  value="front_suspension"
+                  className="py-1.5 px-2 text-xs font-medium data-[state=on]:bg-zinc-800 data-[state=on]:text-zinc-100"
+                >
+                  Front Susp
+                </ToggleGroupItem>
+                <ToggleGroupItem
+                  value="full_suspension"
+                  className="py-1.5 px-2 text-xs font-medium data-[state=on]:bg-zinc-800 data-[state=on]:text-zinc-100"
+                >
+                  Full Susp
                 </ToggleGroupItem>
               </ToggleGroup>
             </div>
@@ -792,11 +890,20 @@ export function BikeBuilderDialog({
           </div>
 
           {/* 3. Suspension Components (Conditional) */}
-          {hasSuspensionFork && (
-            <div className="space-y-3 pt-3 border-t border-white/5">
-              <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">
-                3. Suspension Setup
-              </h4>
+          <div className="space-y-3 pt-3 border-t border-white/5">
+            <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">
+              3. Suspension Setup
+            </h4>
+            {suspensionLayout === "rigid" ? (
+              <div className="p-3.5 rounded-xl bg-zinc-900/40 ring-1 ring-white/5 text-xs text-zinc-400">
+                <span className="font-semibold text-zinc-200 block mb-0.5">
+                  Rigid Frame & Fork Active
+                </span>
+                <span>
+                  No hydraulic air springs to configure. Calibrations will focus entirely on optimal tire casing compliance.
+                </span>
+              </div>
+            ) : (
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div className="space-y-1">
                   <Label className="text-[11px] text-zinc-400">Fork Model</Label>
@@ -843,8 +950,8 @@ export function BikeBuilderDialog({
                   </div>
                 )}
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
           {/* Sticky Action Bar (Footer) with iOS Safe Area Padding */}

@@ -1,11 +1,24 @@
 export type RidingStyle = "smooth_light" | "neutral" | "aggressive_heavy";
 
+export type BikeDiscipline =
+  | "mountain"
+  | "gravel"
+  | "road"
+  | "fat_bike"
+  | "urban_commuter";
+
+export type SuspensionLayout =
+  | "rigid"
+  | "front_suspension"
+  | "full_suspension";
+
 export type BikeCategory =
   | "full_suspension"
   | "hardtail"
   | "gravel"
   | "road"
-  | "fat_bike";
+  | "fat_bike"
+  | "urban_commuter";
 
 export type WheelSize = "29\"" | "27.5\"" | "700c" | "650b" | "26\"";
 
@@ -28,7 +41,9 @@ export interface Bike {
   model: string;
   year: number | string;
   frameSize: string;
-  category: BikeCategory;
+  discipline: BikeDiscipline;
+  suspensionLayout: SuspensionLayout;
+  category?: BikeCategory;
   isEBike: boolean;
   forkModel: string;
   forkTravel: number; // 0 for rigid
@@ -45,11 +60,38 @@ export interface RiderProfile {
   ridingStyle: RidingStyle;
 }
 
-export type TrailCondition =
-  | "dry_fast"
+export type SurfaceCondition =
+  // Mountain
+  | "dry_hardpack"
   | "loam_dirt"
-  | "wet_slippery"
-  | "bike_park";
+  | "wet_mud"
+  | "snow_ice"
+  | "bike_park"
+  // Fat Bike
+  | "dry_dirt"
+  | "packed_snow"
+  | "deep_snow"
+  | "sand"
+  | "fat_mud"
+  // Gravel
+  | "hardpack_pavement"
+  | "packed_gravel"
+  | "loose_chunky"
+  // Road
+  | "smooth_asphalt"
+  | "rough_chipseal"
+  | "wet_tarmac"
+  | "cobblestones"
+  // Urban / Commuter
+  | "dry_pavement"
+  | "wet_rain"
+  | "rough_potholes"
+  | "winter_slush"
+  // Legacy aliases
+  | "dry_fast"
+  | "wet_slippery";
+
+export type TrailCondition = SurfaceCondition;
 
 export interface ModifierItem {
   label: string;

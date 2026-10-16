@@ -35,8 +35,15 @@ export function BikeDetailDialog({
   const displayBrand =
     bike.brand === "Custom" ? bike.customBrand || "Custom" : bike.brand;
 
-  const hasSuspension =
-    bike.category === "full_suspension" || bike.category === "hardtail";
+  const hasSuspension = bike.suspensionLayout
+    ? bike.suspensionLayout !== "rigid"
+    : bike.category === "full_suspension" || bike.category === "hardtail";
+  const hasRearShock = bike.suspensionLayout
+    ? bike.suspensionLayout === "full_suspension"
+    : bike.category === "full_suspension";
+
+  const disciplineLabel = (bike.discipline || bike.category || "mountain").replace("_", " ");
+  const layoutLabel = (bike.suspensionLayout || (hasRearShock ? "full suspension" : hasSuspension ? "front suspension" : "rigid")).replace("_", " ");
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -61,9 +68,12 @@ export function BikeDetailDialog({
               <DialogDescription className="text-xs text-zinc-400">
                 <span className="font-mono">{bike.year}</span> • Size {bike.frameSize}
               </DialogDescription>
-              <div className="flex items-center gap-2 pt-1">
+              <div className="flex items-center gap-2 pt-1 flex-wrap">
+                <span className="text-[10px] uppercase font-sans font-semibold tracking-wider px-2 py-0.5 rounded bg-zinc-900 text-zinc-300">
+                  {disciplineLabel}
+                </span>
                 <span className="text-[10px] uppercase font-sans font-semibold tracking-wider px-2 py-0.5 rounded bg-zinc-900 text-zinc-400">
-                  {bike.category.replace("_", " ")}
+                  {layoutLabel}
                 </span>
                 {bike.isEBike && (
                   <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-900 text-amber-300 flex items-center gap-1 font-sans font-semibold uppercase tracking-wider">
@@ -92,7 +102,7 @@ export function BikeDetailDialog({
                     {bike.forkModel || "Suspension Fork"}
                   </span>
                 </div>
-                {bike.category === "full_suspension" && (
+                {hasRearShock && (
                   <div>
                     <span className="text-zinc-500 font-sans text-[10px] uppercase font-semibold tracking-wider block">
                       Rear Shock

@@ -13,11 +13,25 @@ export type Json =
 
 export type RidingStyle = "smooth_light" | "neutral" | "aggressive_heavy";
 
+export type BikeDiscipline =
+  | "mountain"
+  | "gravel"
+  | "road"
+  | "fat_bike"
+  | "urban_commuter";
+
+export type SuspensionLayout =
+  | "rigid"
+  | "front_suspension"
+  | "full_suspension";
+
 export type BikeCategory =
   | "full_suspension"
   | "hardtail"
   | "gravel"
   | "road"
+  | "fat_bike"
+  | "urban_commuter"
   | "rigid";
 
 export type TireCasing = "light" | "standard" | "heavy" | "downhill";
@@ -66,6 +80,8 @@ export interface Database {
           model: string;
           year: string;
           frame_size: string;
+          discipline?: BikeDiscipline;
+          suspension_layout?: SuspensionLayout;
           category: BikeCategory;
           is_ebike: boolean;
           fork_model: string | null;
@@ -83,6 +99,8 @@ export interface Database {
           model: string;
           year: string;
           frame_size: string;
+          discipline?: BikeDiscipline;
+          suspension_layout?: SuspensionLayout;
           category: BikeCategory;
           is_ebike?: boolean;
           fork_model?: string | null;
@@ -100,6 +118,8 @@ export interface Database {
           model?: string;
           year?: string;
           frame_size?: string;
+          discipline?: BikeDiscipline;
+          suspension_layout?: SuspensionLayout;
           category?: BikeCategory;
           is_ebike?: boolean;
           fork_model?: string | null;

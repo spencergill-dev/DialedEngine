@@ -194,7 +194,10 @@ export function CalculationBreakdownDialog({
 
         {/* Sticky Info Footer with iOS Safe Area Padding */}
         <div className="flex-none p-4 pt-3 pb-8 sm:pb-4 border-t border-zinc-800 bg-zinc-950/90 backdrop-blur-md flex items-center justify-between text-[11px] text-zinc-400">
-          <span>Chassis: {bike.category.replace("_", " ")}</span>
+          <span>
+            Chassis: {(bike.discipline || bike.category || "mountain").replace("_", " ")}
+            {bike.suspensionLayout ? ` • ${bike.suspensionLayout.replace("_", " ")}` : ""}
+          </span>
           <span className="flex items-center gap-1.5 text-lime-400 font-semibold">
             <CheckCircle2 className="w-3.5 h-3.5" />
             <span>Optimal Sweet Spot</span>

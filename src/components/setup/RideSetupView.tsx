@@ -14,6 +14,9 @@ import {
   Cloud,
   ChevronRight,
   Loader2,
+  Snowflake,
+  CloudSnow,
+  Waves,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -35,6 +38,7 @@ import {
 } from "@/services/WeatherService";
 import type {
   Bike,
+  BikeDiscipline,
   RiderProfile,
   TrailCondition,
   RidingStyle,
@@ -48,17 +52,47 @@ interface RideSetupViewProps {
   onSwitchToGarage: () => void;
 }
 
-const TRAIL_CONDITIONS: {
+export interface SurfaceConditionPreset {
   id: TrailCondition;
   label: string;
   icon: typeof Sun;
   offset: string;
-}[] = [
-  { id: "dry_fast", label: "Dry", icon: Sun, offset: "0.0 PSI" },
-  { id: "loam_dirt", label: "Loam", icon: Leaf, offset: "0.0 PSI" },
-  { id: "wet_slippery", label: "Wet", icon: CloudRain, offset: "-1.5 PSI" },
-  { id: "bike_park", label: "Park", icon: Mountain, offset: "+2.0 PSI" },
-];
+}
+
+export const DISCIPLINE_SURFACE_PRESETS: Record<BikeDiscipline, SurfaceConditionPreset[]> = {
+  mountain: [
+    { id: "dry_hardpack", label: "Dry / Hardpack", icon: Sun, offset: "0.0 PSI" },
+    { id: "loam_dirt", label: "Loam", icon: Leaf, offset: "0.0 PSI" },
+    { id: "wet_mud", label: "Wet / Mud", icon: CloudRain, offset: "-1.5 PSI" },
+    { id: "snow_ice", label: "Snow / Ice", icon: Snowflake, offset: "-2.0 PSI" },
+    { id: "bike_park", label: "Bike Park", icon: Mountain, offset: "+2.0 PSI" },
+  ],
+  fat_bike: [
+    { id: "dry_dirt", label: "Dry / Dirt", icon: Sun, offset: "0.0 PSI" },
+    { id: "packed_snow", label: "Packed Snow", icon: Snowflake, offset: "-1.0 PSI" },
+    { id: "deep_snow", label: "Deep Snow", icon: CloudSnow, offset: "-2.5 PSI" },
+    { id: "sand", label: "Sand", icon: Waves, offset: "-2.0 PSI" },
+    { id: "fat_mud", label: "Mud", icon: CloudRain, offset: "-1.5 PSI" },
+  ],
+  gravel: [
+    { id: "hardpack_pavement", label: "Pavement / Hardpack", icon: Compass, offset: "+2.0 PSI" },
+    { id: "packed_gravel", label: "Packed Gravel", icon: Sun, offset: "0.0 PSI" },
+    { id: "loose_chunky", label: "Loose / Chunky", icon: Mountain, offset: "-2.0 PSI" },
+    { id: "wet_mud", label: "Wet / Mud", icon: CloudRain, offset: "-2.5 PSI" },
+  ],
+  road: [
+    { id: "smooth_asphalt", label: "Smooth Asphalt", icon: Sun, offset: "+3.0 PSI" },
+    { id: "rough_chipseal", label: "Rough / Chipseal", icon: Compass, offset: "-3.0 PSI" },
+    { id: "wet_tarmac", label: "Wet Tarmac", icon: CloudRain, offset: "-5.0 PSI" },
+    { id: "cobblestones", label: "Cobblestones", icon: Mountain, offset: "-6.0 PSI" },
+  ],
+  urban_commuter: [
+    { id: "dry_pavement", label: "Dry Pavement", icon: Sun, offset: "0.0 PSI" },
+    { id: "wet_rain", label: "Wet / Rain", icon: CloudRain, offset: "-3.0 PSI" },
+    { id: "rough_potholes", label: "Potholes / Rough", icon: Compass, offset: "-2.0 PSI" },
+    { id: "winter_slush", label: "Winter / Slush", icon: Snowflake, offset: "-4.0 PSI" },
+  ],
+};
 
 const RIDING_STYLES: {
   id: RidingStyle;
@@ -212,6 +246,31 @@ export function RideSetupView({
   };
 
   const currentBike = bikes.find((b) => b.id === activeBikeId) || bikes[0];
+
+  const bikeDiscipline: BikeDiscipline =
+    currentBike?.discipline ||
+    (currentBike?.category === "road"
+      ? "road"
+      : currentBike?.category === "gravel"
+      ? "gravel"
+      : currentBike?.category === "fat_bike"
+      ? "fat_bike"
+      : currentBike?.category === "urban_commuter"
+      ? "urban_commuter"
+      : "mountain");
+
+  const surfacePresets =
+    DISCIPLINE_SURFACE_PRESETS[bikeDiscipline] ||
+    DISCIPLINE_SURFACE_PRESETS.mountain;
+
+  // Sync condition if active bike discipline changes
+  useEffect(() => {
+    const exists = surfacePresets.some((p) => p.id === condition);
+    if (!exists && surfacePresets.length > 0) {
+      setCondition(surfacePresets[0].id);
+    }
+  }, [bikeDiscipline, surfacePresets, condition]);
+
   const setup = useDialedMath(
     currentBike,
     profile,
@@ -229,9 +288,14 @@ export function RideSetupView({
   const handleSelectTimePlan = (plan: RideTimePlan, willAutoSetWet: boolean) => {
     setSelectedTimePlan(plan);
     if (willAutoSetWet) {
-      setCondition("wet_slippery");
-      setAutoWetNote("Surface condition auto-set to WET based on forecasted rain");
-      toast.info("Surface condition auto-set to WET based on forecasted rain");
+      const wetPreset =
+        surfacePresets.find(
+          (p) =>
+            p.id.includes("wet") || p.id.includes("rain") || p.id.includes("mud")
+        )?.id || surfacePresets[0].id;
+      setCondition(wetPreset);
+      setAutoWetNote("Surface condition auto-set based on forecasted precipitation");
+      toast.info("Surface condition auto-set based on forecasted precipitation");
     } else {
       setAutoWetNote(null);
     }
@@ -239,7 +303,12 @@ export function RideSetupView({
 
   const handleConditionSelect = (newCond: TrailCondition) => {
     setCondition(newCond);
-    if (autoWetNote && newCond !== "wet_slippery") {
+    if (
+      autoWetNote &&
+      !newCond.includes("wet") &&
+      !newCond.includes("rain") &&
+      !newCond.includes("mud")
+    ) {
       setAutoWetNote(null);
     }
   };
@@ -285,13 +354,18 @@ export function RideSetupView({
             </h1>
           </div>
 
-          <div className="flex items-center gap-2 pl-3.5 sm:pl-0">
+          <div className="flex items-center gap-2 pl-3.5 sm:pl-0 flex-wrap">
             <span className="px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-[11px] font-bold text-zinc-200">
               <span className="font-mono">{profile.weight}</span> LBS
             </span>
             <span className="px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-[11px] font-medium text-zinc-300 capitalize">
-              {currentBike.category.replace("_", " ")}
+              {bikeDiscipline.replace("_", " ")}
             </span>
+            {currentBike?.suspensionLayout && (
+              <span className="px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-[11px] font-medium text-zinc-400 capitalize">
+                {currentBike.suspensionLayout.replace("_", " ")}
+              </span>
+            )}
           </div>
         </div>
 
@@ -389,7 +463,7 @@ export function RideSetupView({
                 Surface Conditions
               </Label>
               {(() => {
-                const offset = TRAIL_CONDITIONS.find((c) => c.id === condition)?.offset;
+                const offset = surfacePresets.find((c) => c.id === condition)?.offset;
                 if (!offset || offset === "0.0 PSI") {
                   return (
                     <span className="text-[10px] font-sans font-semibold tracking-wider text-zinc-500 uppercase">
@@ -413,8 +487,13 @@ export function RideSetupView({
               </div>
             )}
 
-            <div className="relative grid grid-cols-4 gap-1 p-1 bg-zinc-900 rounded-xl">
-              {TRAIL_CONDITIONS.map((cond) => {
+            <div
+              className="relative grid gap-1 p-1 bg-zinc-900 rounded-xl"
+              style={{
+                gridTemplateColumns: `repeat(${surfacePresets.length}, minmax(0, 1fr))`,
+              }}
+            >
+              {surfacePresets.map((cond) => {
                 const isSelected = condition === cond.id;
                 const Icon = cond.icon;
 
@@ -423,7 +502,7 @@ export function RideSetupView({
                     key={cond.id}
                     type="button"
                     onClick={() => handleConditionSelect(cond.id)}
-                    className={`relative z-10 py-2 px-1 text-xs font-sans font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-colors ${
+                    className={`relative z-10 py-2 px-1 text-[11px] sm:text-xs font-sans font-semibold rounded-lg flex items-center justify-center gap-1 sm:gap-1.5 transition-colors ${
                       isSelected
                         ? "text-white"
                         : "text-zinc-400 hover:text-zinc-200"

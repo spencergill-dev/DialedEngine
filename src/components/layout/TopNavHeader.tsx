@@ -107,7 +107,7 @@ export function TopNavHeader({
                           {bBrand} {b.model}
                         </span>
                         <span className="text-[10px] font-sans text-zinc-500 uppercase tracking-wider shrink-0">
-                          {b.category.replace("_", " ")}
+                          {(b.discipline || b.category || "mountain").replace("_", " ")}
                         </span>
                       </div>
                     </SelectItem>
