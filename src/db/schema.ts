@@ -202,6 +202,112 @@ export interface Database {
           updated_at?: string;
         };
       };
+      brands: {
+        Row: {
+          id?: string | number;
+          name?: string;
+          brand?: string;
+          created_at?: string;
+          [key: string]: any;
+        };
+        Insert: {
+          id?: string | number;
+          name?: string;
+          brand?: string;
+          created_at?: string;
+          [key: string]: any;
+        };
+        Update: {
+          id?: string | number;
+          name?: string;
+          brand?: string;
+          [key: string]: any;
+        };
+      };
+      bike_models: {
+        Row: {
+          id?: string | number;
+          name?: string;
+          model?: string;
+          brand_id?: string | number | null;
+          brand?: string | null;
+          year?: string | number | null;
+          created_at?: string;
+          [key: string]: any;
+        };
+        Insert: {
+          id?: string | number;
+          name?: string;
+          model?: string;
+          brand_id?: string | number | null;
+          brand?: string | null;
+          [key: string]: any;
+        };
+        Update: {
+          id?: string | number;
+          name?: string;
+          model?: string;
+          brand_id?: string | number | null;
+          brand?: string | null;
+          [key: string]: any;
+        };
+      };
+      suspension: {
+        Row: {
+          id?: string | number;
+          name?: string;
+          model?: string;
+          brand?: string | null;
+          manufacturer?: string | null;
+          type?: string | null;
+          category?: string | null;
+          created_at?: string;
+          [key: string]: any;
+        };
+        Insert: {
+          id?: string | number;
+          name?: string;
+          model?: string;
+          brand?: string | null;
+          type?: string | null;
+          [key: string]: any;
+        };
+        Update: {
+          id?: string | number;
+          name?: string;
+          model?: string;
+          brand?: string | null;
+          type?: string | null;
+          [key: string]: any;
+        };
+      };
+      tires: {
+        Row: {
+          id?: string | number;
+          name?: string;
+          model?: string;
+          brand?: string | null;
+          manufacturer?: string | null;
+          width?: string | null;
+          casing?: string | null;
+          created_at?: string;
+          [key: string]: any;
+        };
+        Insert: {
+          id?: string | number;
+          name?: string;
+          model?: string;
+          brand?: string | null;
+          [key: string]: any;
+        };
+        Update: {
+          id?: string | number;
+          name?: string;
+          model?: string;
+          brand?: string | null;
+          [key: string]: any;
+        };
+      };
     };
     Views: {
       [_ in never]: never;

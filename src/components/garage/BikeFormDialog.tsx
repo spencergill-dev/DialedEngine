@@ -19,7 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Combobox } from "@/components/ui/combobox";
-import { POPULAR_FORKS, POPULAR_SHOCKS } from "@/data/suspensionPresets";
+import { useHardwareCatalog } from "@/hooks/useHardwareCatalog";
 import type { Bike, TireSetup, TireCasing } from "@/types/mountainBike";
 
 interface BikeFormDialogProps {
@@ -64,6 +64,12 @@ export function BikeFormDialog({
   bikeToEdit,
   onSave,
 }: BikeFormDialogProps) {
+  const {
+    forks: catalogForks,
+    shocks: catalogShocks,
+    tires: catalogTires,
+  } = useHardwareCatalog();
+
   const [name, setName] = useState("");
   const [isEBike, setIsEBike] = useState(false);
   const [suspensionType, setSuspensionType] = useState<"Full Suspension" | "Hardtail">("Full Suspension");
@@ -214,11 +220,12 @@ export function BikeFormDialog({
 
               <div className="space-y-1">
                 <Label className="text-[11px] text-slate-400">Model</Label>
-                <Input
+                <Combobox
                   value={frontTire.model}
-                  onChange={(e) =>
-                    setFrontTire((prev) => ({ ...prev, model: e.target.value }))
+                  onChange={(val) =>
+                    setFrontTire((prev) => ({ ...prev, model: val }))
                   }
+                  options={catalogTires}
                   placeholder="e.g. Assegai"
                   className="h-9 bg-slate-950 border-slate-800 text-base md:text-sm"
                 />
@@ -314,11 +321,12 @@ export function BikeFormDialog({
 
               <div className="space-y-1">
                 <Label className="text-[11px] text-slate-400">Model</Label>
-                <Input
+                <Combobox
                   value={rearTire.model}
-                  onChange={(e) =>
-                    setRearTire((prev) => ({ ...prev, model: e.target.value }))
+                  onChange={(val) =>
+                    setRearTire((prev) => ({ ...prev, model: val }))
                   }
+                  options={catalogTires}
                   placeholder="e.g. Minion DHR II"
                   className="h-9 bg-slate-950 border-slate-800 text-base md:text-sm"
                 />
@@ -396,7 +404,7 @@ export function BikeFormDialog({
                 <Combobox
                   value={forkModel}
                   onChange={setForkModel}
-                  options={POPULAR_FORKS}
+                  options={catalogForks}
                   placeholder="e.g. Fox 38 Factory"
                   className="h-9 bg-slate-950 border-slate-800 text-base md:text-sm"
                 />
@@ -427,7 +435,7 @@ export function BikeFormDialog({
                   <Combobox
                     value={shockModel}
                     onChange={setShockModel}
-                    options={POPULAR_SHOCKS}
+                    options={catalogShocks}
                     placeholder="e.g. Fox Float X2"
                     className="h-9 bg-slate-950 border-slate-800 text-base md:text-sm"
                   />

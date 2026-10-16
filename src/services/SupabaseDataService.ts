@@ -1,24 +1,15 @@
 import type { Bike, RiderProfile } from "@/types/cycling";
 import type { IDataService } from "./DataService";
 import type { Database } from "@/db/schema";
+import { supabase } from "@/lib/supabaseClient";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 export type SupabaseDatabase = Database;
 
-/**
- * SupabaseDataService (V2 Scaffolding)
- * 
- * Future-ready implementation of IDataService that synchronizes
- * fleet data, component setups, and rider profiles with Supabase PostgreSQL.
- * 
- * To activate in V2:
- * 1. npm install @supabase/supabase-js
- * 2. Supply VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY in .env
- * 3. Swap the active singleton in src/services/index.ts to new SupabaseDataService(client)
- */
 export class SupabaseDataService implements IDataService {
-  private client: unknown; // Will type as SupabaseClient<Database> when installed
+  private client: SupabaseClient<Database>;
 
-  constructor(supabaseClient?: unknown) {
+  constructor(supabaseClient: SupabaseClient<Database> = supabase) {
     this.client = supabaseClient;
   }
 

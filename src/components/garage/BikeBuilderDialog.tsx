@@ -9,7 +9,6 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -21,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Combobox } from "@/components/ui/combobox";
-import { POPULAR_FORKS, POPULAR_SHOCKS } from "@/data/suspensionPresets";
+import { useHardwareCatalog } from "@/hooks/useHardwareCatalog";
 import type {
   Bike,
   BikeDiscipline,
@@ -37,20 +36,6 @@ interface BikeBuilderDialogProps {
   bikeToEdit: Bike | null;
   onSave: (bikeData: Omit<Bike, "id">) => void;
 }
-
-const POPULAR_BRANDS = [
-  "Santa Cruz",
-  "Specialized",
-  "Trek",
-  "Canyon",
-  "Giant",
-  "Yeti",
-  "Cannondale",
-  "Cervelo",
-  "Pivot",
-  "Orbea",
-  "Custom",
-];
 
 const MODEL_YEARS = [
   "2026",
@@ -143,6 +128,15 @@ export function BikeBuilderDialog({
   bikeToEdit,
   onSave,
 }: BikeBuilderDialogProps) {
+  const {
+    brands: catalogBrands,
+    models: catalogModels,
+    modelsByBrand,
+    forks: catalogForks,
+    shocks: catalogShocks,
+    tires: catalogTires,
+  } = useHardwareCatalog();
+
   const [brand, setBrand] = useState("Santa Cruz");
   const [customBrand, setCustomBrand] = useState("");
   const [model, setModel] = useState("");
@@ -158,6 +152,13 @@ export function BikeBuilderDialog({
 
   const [frontTire, setFrontTire] = useState<TireSetup>(DEFAULT_FRONT_TIRE);
   const [rearTire, setRearTire] = useState<TireSetup>(DEFAULT_REAR_TIRE);
+
+  const brandKey = brand.trim().toLowerCase();
+  const brandSpecificModels = modelsByBrand[brandKey];
+  const suggestedModels =
+    brandSpecificModels && brandSpecificModels.length > 0
+      ? brandSpecificModels
+      : catalogModels;
 
   useEffect(() => {
     if (bikeToEdit) {
@@ -354,9 +355,11 @@ export function BikeBuilderDialog({
       rearTire.width ||
       (rearTire.wheelSize === "700c" || rearTire.wheelSize === "650b" ? "40mm" : "2.4\"");
 
+    const resolvedBrand = brand === "Custom" && customBrand ? customBrand.trim() : brand.trim() || "Custom";
+
     onSave({
-      brand,
-      customBrand: brand === "Custom" ? customBrand.trim() : undefined,
+      brand: resolvedBrand,
+      customBrand: resolvedBrand !== brand ? resolvedBrand : undefined,
       model: model.trim(),
       year,
       frameSize,
@@ -497,103 +500,68 @@ export function BikeBuilderDialog({
               </ToggleGroup>
             </div>
 
-            {/* Brand, Custom Fallback, Model */}
+            {/* Brand, Model, Year & Size */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-xs text-zinc-300">Brand</Label>
-                <Select value={brand} onValueChange={setBrand}>
-                  <SelectTrigger className="bg-zinc-900 ring-1 ring-white/10 text-base md:text-sm">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
-                    {POPULAR_BRANDS.map((b) => (
-                      <SelectItem key={b} value={b} className="text-base md:text-sm">
-                        {b}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Combobox
+                  value={brand === "Custom" && customBrand ? customBrand : brand}
+                  onChange={(val) => {
+                    setBrand(val);
+                    if (val !== "Custom") {
+                      setCustomBrand("");
+                    }
+                  }}
+                  options={catalogBrands}
+                  placeholder="Select or type brand..."
+                  className="bg-zinc-900 ring-1 ring-white/10 text-base md:text-sm"
+                />
               </div>
 
-              {brand === "Custom" ? (
-                <div className="space-y-1.5">
-                  <Label htmlFor="custom-brand" className="text-xs text-zinc-300">
-                    Custom Brand Name
-                  </Label>
-                  <Input
-                    id="custom-brand"
-                    placeholder="e.g. Allied, Transition"
-                    value={customBrand}
-                    onChange={(e) => setCustomBrand(e.target.value)}
-                    required
-                    className="bg-zinc-900 ring-1 ring-white/10 text-base md:text-sm"
-                  />
-                </div>
-              ) : (
-                <div className="space-y-1.5">
-                  <Label htmlFor="model-name" className="text-xs text-zinc-300">
-                    Model
-                  </Label>
-                  <Input
-                    id="model-name"
-                    placeholder="e.g. Megatower, Grizl"
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                    required
-                    className="bg-zinc-900 ring-1 ring-white/10 text-base md:text-sm"
-                  />
-                </div>
-              )}
+              <div className="space-y-1.5">
+                <Label className="text-xs text-zinc-300">Model</Label>
+                <Combobox
+                  value={model}
+                  onChange={setModel}
+                  options={suggestedModels}
+                  placeholder="Select or type model..."
+                  className="bg-zinc-900 ring-1 ring-white/10 text-base md:text-sm"
+                />
+              </div>
 
-              {brand === "Custom" ? (
+              <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="model-name-custom" className="text-xs text-zinc-300">
-                    Model
-                  </Label>
-                  <Input
-                    id="model-name-custom"
-                    placeholder="e.g. Repeater"
-                    value={model}
-                    onChange={(e) => setModel(e.target.value)}
-                    required
-                    className="bg-zinc-900 ring-1 ring-white/10 text-base md:text-sm"
-                  />
+                  <Label className="text-xs text-zinc-300">Year</Label>
+                  <Select value={year} onValueChange={setYear}>
+                    <SelectTrigger className="bg-zinc-900 ring-1 ring-white/10 text-base md:text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
+                      {MODEL_YEARS.map((y) => (
+                        <SelectItem key={y} value={y} className="text-base md:text-sm">
+                          {y}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              ) : (
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-zinc-300">Year</Label>
-                    <Select value={year} onValueChange={setYear}>
-                      <SelectTrigger className="bg-zinc-900 ring-1 ring-white/10 text-base md:text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
-                        {MODEL_YEARS.map((y) => (
-                          <SelectItem key={y} value={y} className="text-base md:text-sm">
-                            {y}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
 
-                  <div className="space-y-1.5">
-                    <Label className="text-xs text-zinc-300">Size</Label>
-                    <Select value={frameSize} onValueChange={setFrameSize}>
-                      <SelectTrigger className="bg-zinc-900 ring-1 ring-white/10 text-base md:text-sm">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
-                        {FRAME_SIZES.map((s) => (
-                          <SelectItem key={s} value={s} className="text-base md:text-sm">
-                            {s}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs text-zinc-300">Size</Label>
+                  <Select value={frameSize} onValueChange={setFrameSize}>
+                    <SelectTrigger className="bg-zinc-900 ring-1 ring-white/10 text-base md:text-sm">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
+                      {FRAME_SIZES.map((s) => (
+                        <SelectItem key={s} value={s} className="text-base md:text-sm">
+                          {s}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
-              )}
+              </div>
             </div>
 
             {/* E-Bike Toggle */}
@@ -653,11 +621,12 @@ export function BikeBuilderDialog({
 
                 <div className="space-y-1">
                   <Label className="text-[11px] text-zinc-400">Tire Model</Label>
-                  <Input
+                  <Combobox
                     value={frontTire.model}
-                    onChange={(e) =>
-                      setFrontTire((prev) => ({ ...prev, model: e.target.value }))
+                    onChange={(val) =>
+                      setFrontTire((prev) => ({ ...prev, model: val }))
                     }
+                    options={catalogTires}
                     placeholder="e.g. Assegai"
                     className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
                   />
@@ -787,11 +756,12 @@ export function BikeBuilderDialog({
 
                 <div className="space-y-1">
                   <Label className="text-[11px] text-zinc-400">Tire Model</Label>
-                  <Input
+                  <Combobox
                     value={rearTire.model}
-                    onChange={(e) =>
-                      setRearTire((prev) => ({ ...prev, model: e.target.value }))
+                    onChange={(val) =>
+                      setRearTire((prev) => ({ ...prev, model: val }))
                     }
+                    options={catalogTires}
                     placeholder="e.g. Minion DHR II"
                     className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
                   />
@@ -910,7 +880,7 @@ export function BikeBuilderDialog({
                   <Combobox
                     value={forkModel}
                     onChange={setForkModel}
-                    options={POPULAR_FORKS}
+                    options={catalogForks}
                     placeholder="e.g. Fox 38 Factory"
                     className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
                   />
@@ -943,7 +913,7 @@ export function BikeBuilderDialog({
                     <Combobox
                       value={shockModel}
                       onChange={setShockModel}
-                      options={POPULAR_SHOCKS}
+                      options={catalogShocks}
                       placeholder="e.g. Fox Float X2"
                       className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
                     />
