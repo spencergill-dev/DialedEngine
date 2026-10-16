@@ -40,7 +40,7 @@ export function TopNavHeader({
       : activeBike?.brand;
 
   return (
-    <header className="sticky top-0 z-40 w-full bg-[#111111]/90 backdrop-blur-xl border-b border-zinc-800/50 transition-all">
+    <header className="sticky top-0 z-50 w-full bg-zinc-950/85 backdrop-blur-md border-b border-zinc-800/50 transition-all">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-2 sm:gap-4">
         {/* Left: Brand Mark */}
         <div className="flex items-center gap-3 shrink-0">

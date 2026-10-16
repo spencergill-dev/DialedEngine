@@ -35,7 +35,7 @@ export function DialedEngine() {
       />
 
       {/* Main View Area (with generous bottom clearance for mobile fixed tab bar) */}
-      <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 pt-6 pb-28 sm:pb-32 md:py-8 flex-1">
+      <main className="max-w-7xl w-full mx-auto px-4 sm:px-6 pt-4 pb-28 sm:pb-32 md:pb-12 flex-1">
         {mainView === "setup" && (
           <RideSetupView
             bikes={bikes}
