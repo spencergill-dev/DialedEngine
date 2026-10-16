@@ -12,6 +12,7 @@ import {
   Cloud,
   ChevronRight,
   Loader2,
+  Pencil,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
@@ -32,6 +33,7 @@ import {
   type LocationCoordinates,
 } from "@/services/WeatherService";
 import { DISCIPLINE_SURFACE_PRESETS } from "@/data/disciplinePresets";
+import { BikeBuilderDialog } from "@/components/garage/BikeBuilderDialog";
 import type {
   Bike,
   BikeDiscipline,
@@ -46,6 +48,7 @@ interface RideSetupViewProps {
   onSelectBike?: (id: string) => void;
   profile: RiderProfile;
   onSwitchToGarage: () => void;
+  onUpdateBike?: (id: string, updates: Partial<Bike>) => void;
 }
 
 const RIDING_STYLES: {
@@ -65,6 +68,7 @@ export function RideSetupView({
   onSelectBike: _onSelectBike,
   profile,
   onSwitchToGarage,
+  onUpdateBike,
 }: RideSetupViewProps) {
   const [condition, setCondition] = useState<TrailCondition>("loam_dirt");
   const [rideStyle, setRideStyle] = useState<RidingStyle>(
@@ -72,6 +76,25 @@ export function RideSetupView({
   );
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
   const [breakdownTab, setBreakdownTab] = useState<"front" | "rear">("front");
+  const [isEditBikeOpen, setIsEditBikeOpen] = useState(false);
+
+  const currentBike = bikes.find((b) => b.id === activeBikeId) || bikes[0];
+
+  const bikeDiscipline: BikeDiscipline =
+    currentBike?.discipline ||
+    (currentBike?.category === "road"
+      ? "road"
+      : currentBike?.category === "gravel"
+      ? "gravel"
+      : currentBike?.category === "fat_bike"
+      ? "fat_bike"
+      : currentBike?.category === "urban_commuter"
+      ? "urban_commuter"
+      : "mountain");
+
+  const surfacePresets =
+    DISCIPLINE_SURFACE_PRESETS[bikeDiscipline] ||
+    DISCIPLINE_SURFACE_PRESETS.mountain;
 
   // Live Conditions & Forecasting State
   const [selectedLocation, setSelectedLocation] = useState<string>("Locating...");
@@ -103,13 +126,38 @@ export function RideSetupView({
             weather.timePlans[0];
           return match;
         });
+
+        // Weather Auto-Toggle Logic:
+        // If the weather indicates Rain, Drizzle, or Showers, automatically set local surfaceCondition to the discipline's wet preset
+        const isRainWeather =
+          weather.weatherIcon === "rain" ||
+          weather.precipitation > 0 ||
+          [51, 53, 55, 56, 57, 61, 63, 65, 66, 67, 80, 81, 82, 95, 96, 99].includes(weather.weatherCode) ||
+          /rain|drizzle|shower/i.test(weather.weatherDescription);
+
+        if (isRainWeather) {
+          const wetPreset =
+            surfacePresets.find(
+              (p) =>
+                p.id.includes("wet") ||
+                p.id.includes("rain") ||
+                p.id.includes("mud") ||
+                p.label.toLowerCase().includes("wet") ||
+                p.label.toLowerCase().includes("mud")
+            )?.id || surfacePresets[0].id;
+
+          setCondition(wetPreset);
+          const note = "Surface condition auto-set to Wet based on local weather.";
+          setAutoWetNote(note);
+          toast.info(note);
+        }
       } catch (err) {
         console.error("Open-Meteo live weather fetch error:", err);
       } finally {
         setIsLoadingWeather(false);
       }
     },
-    []
+    [surfacePresets]
   );
 
   // Initial load: Attempt automatic device geolocation & reverse geocoding on mount
@@ -199,24 +247,6 @@ export function RideSetupView({
     }
   };
 
-  const currentBike = bikes.find((b) => b.id === activeBikeId) || bikes[0];
-
-  const bikeDiscipline: BikeDiscipline =
-    currentBike?.discipline ||
-    (currentBike?.category === "road"
-      ? "road"
-      : currentBike?.category === "gravel"
-      ? "gravel"
-      : currentBike?.category === "fat_bike"
-      ? "fat_bike"
-      : currentBike?.category === "urban_commuter"
-      ? "urban_commuter"
-      : "mountain");
-
-  const surfacePresets =
-    DISCIPLINE_SURFACE_PRESETS[bikeDiscipline] ||
-    DISCIPLINE_SURFACE_PRESETS.mountain;
-
   // Sync condition if active bike discipline changes
   useEffect(() => {
     const exists = surfacePresets.some((p) => p.id === condition);
@@ -303,9 +333,20 @@ export function RideSetupView({
                 ACTIVE SETUP
               </span>
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight pl-3.5">
-              {displayBrand} {currentBike.model}
-            </h1>
+            <div className="flex items-center gap-2 pl-3.5">
+              <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+                {displayBrand} {currentBike.model}
+              </h1>
+              <button
+                type="button"
+                onClick={() => setIsEditBikeOpen(true)}
+                className="p-1 rounded-md text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors"
+                title="Edit bike setup"
+                aria-label="Edit bike setup"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
 
           <div className="flex items-center gap-2 pl-3.5 sm:pl-0 flex-wrap">
@@ -315,11 +356,6 @@ export function RideSetupView({
             <span className="px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-[11px] font-medium text-zinc-300 capitalize">
               {bikeDiscipline.replace("_", " ")}
             </span>
-            {currentBike?.suspensionLayout && (
-              <span className="px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-[11px] font-medium text-zinc-400 capitalize">
-                {currentBike.suspensionLayout.replace("_", " ")}
-              </span>
-            )}
           </div>
         </div>
 
@@ -441,12 +477,7 @@ export function RideSetupView({
               </div>
             )}
 
-            <div
-              className="relative grid gap-1 p-1 bg-zinc-900 rounded-xl"
-              style={{
-                gridTemplateColumns: `repeat(${surfacePresets.length}, minmax(0, 1fr))`,
-              }}
-            >
+            <div className="relative flex items-center overflow-x-auto gap-2 no-scrollbar px-1 py-1 bg-zinc-900 rounded-xl">
               {surfacePresets.map((cond) => {
                 const isSelected = condition === cond.id;
                 const Icon = cond.icon;
@@ -456,7 +487,7 @@ export function RideSetupView({
                     key={cond.id}
                     type="button"
                     onClick={() => handleConditionSelect(cond.id)}
-                    className={`relative z-10 py-2 px-1 text-[11px] sm:text-xs font-sans font-semibold rounded-lg flex items-center justify-center gap-1 sm:gap-1.5 transition-colors ${
+                    className={`relative z-10 shrink-0 whitespace-nowrap py-2 px-3 text-xs font-sans font-semibold rounded-lg flex items-center justify-center gap-1.5 transition-colors ${
                       isSelected
                         ? "text-white"
                         : "text-zinc-400 hover:text-zinc-200"
@@ -470,7 +501,7 @@ export function RideSetupView({
                       />
                     )}
                     <Icon className="w-3.5 h-3.5 shrink-0" />
-                    <span className="truncate">{cond.label}</span>
+                    <span>{cond.label}</span>
                   </button>
                 );
               })}
@@ -952,6 +983,22 @@ export function RideSetupView({
         locationError={locationError}
         isDeviceLocation={isDeviceLocation}
       />
+
+      {/* Quick Edit Bike Dialog */}
+      {currentBike && (
+        <BikeBuilderDialog
+          open={isEditBikeOpen}
+          onOpenChange={setIsEditBikeOpen}
+          bikeToEdit={currentBike}
+          onSave={(bikeData) => {
+            if (onUpdateBike && currentBike) {
+              onUpdateBike(currentBike.id, bikeData);
+              toast.success(`${bikeData.brand || currentBike.brand} updated`);
+            }
+            setIsEditBikeOpen(false);
+          }}
+        />
+      )}
     </div>
   );
 }

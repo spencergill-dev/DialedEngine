@@ -43,6 +43,7 @@ export function DialedEngine() {
             onSelectBike={setActiveBikeId}
             profile={profile}
             onSwitchToGarage={() => setMainView("garage")}
+            onUpdateBike={updateBike}
           />
         )}
 

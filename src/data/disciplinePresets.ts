@@ -42,10 +42,10 @@ export const DISCIPLINE_SURFACE_PRESETS: Record<
     { id: "wet_mud", label: "Wet / Mud", icon: CloudRain, offset: "-2.5 PSI" },
   ],
   road: [
-    { id: "smooth_asphalt", label: "Smooth Asphalt", icon: Sun, offset: "+3.0 PSI" },
-    { id: "rough_chipseal", label: "Rough / Chipseal", icon: Compass, offset: "-3.0 PSI" },
-    { id: "wet_tarmac", label: "Wet Tarmac", icon: CloudRain, offset: "-5.0 PSI" },
-    { id: "cobblestones", label: "Cobblestones", icon: Mountain, offset: "-6.0 PSI" },
+    { id: "smooth_asphalt", label: "Pristine", icon: Sun, offset: "+3.0 PSI" },
+    { id: "rough_chipseal", label: "Rough", icon: Compass, offset: "-3.0 PSI" },
+    { id: "wet_tarmac", label: "Wet", icon: CloudRain, offset: "-5.0 PSI" },
+    { id: "cobblestones", label: "Cobbles", icon: Mountain, offset: "-6.0 PSI" },
   ],
   urban_commuter: [
     { id: "dry_pavement", label: "Dry Pavement", icon: Sun, offset: "0.0 PSI" },
