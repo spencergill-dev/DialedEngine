@@ -11,6 +11,7 @@ import {
   Clock,
   Cloud,
   ChevronRight,
+  ChevronDown,
   Loader2,
   Pencil,
 } from "lucide-react";
@@ -370,7 +371,7 @@ export function RideSetupView({
 
         {/* Live Conditions & Forecasting Module (Compact, Borderless, Geist Sans) */}
         <div className="mt-4 pt-3 border-t border-zinc-800/40 space-y-1.5 font-sans">
-          <div className="flex items-center gap-3 flex-wrap text-xs">
+          <div className="flex items-center gap-2 flex-wrap text-xs">
             {/* Location Button */}
             <button
               type="button"
@@ -378,7 +379,7 @@ export function RideSetupView({
                 setRidePlanTab("location");
                 setIsRidePlanOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors group cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 rounded-full border border-zinc-800 transition-colors text-zinc-300 hover:text-white group cursor-pointer"
             >
               {isLocating || selectedLocation === "Locating..." ? (
                 <>
@@ -388,21 +389,20 @@ export function RideSetupView({
               ) : selectedLocation === "Set Location" ? (
                 <>
                   <MapPin className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span className="font-medium text-amber-400 underline-offset-4 group-hover:underline">
+                  <span className="font-medium text-amber-400">
                     Set Location
                   </span>
                 </>
               ) : (
                 <>
                   <MapPin className="w-3.5 h-3.5 text-lime-400 shrink-0" />
-                  <span className="font-medium underline-offset-4 group-hover:underline">
+                  <span className="font-medium text-zinc-200">
                     {selectedLocation}
                   </span>
                 </>
               )}
+              <ChevronDown className="w-3 h-3 text-zinc-500 group-hover:text-zinc-300 transition-colors shrink-0" />
             </button>
-
-            <span className="text-zinc-700">•</span>
 
             {/* Time of Ride Button */}
             <button
@@ -411,12 +411,13 @@ export function RideSetupView({
                 setRidePlanTab("time");
                 setIsRidePlanOpen(true);
               }}
-              className="inline-flex items-center gap-1.5 text-zinc-300 hover:text-white transition-colors group cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-zinc-900 hover:bg-zinc-800 rounded-full border border-zinc-800 transition-colors text-zinc-300 hover:text-white group cursor-pointer"
             >
               <Clock className="w-3.5 h-3.5 text-lime-400 shrink-0" />
-              <span className="font-medium underline-offset-4 group-hover:underline">
+              <span className="font-medium text-zinc-200">
                 {selectedTimePlan.label}
               </span>
+              <ChevronDown className="w-3 h-3 text-zinc-500 group-hover:text-zinc-300 transition-colors shrink-0" />
             </button>
           </div>
 
