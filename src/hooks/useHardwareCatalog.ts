@@ -213,8 +213,8 @@ export function useHardwareCatalog() {
             const name = extractRowString(item, ["name", "brand", "brand_name", "title"]);
             if (name) {
               fetchedBrands.push(name);
-              if (item.id) {
-                brandIdToNameMap[String(item.id)] = name.toLowerCase();
+              if (item.id !== undefined && item.id !== null) {
+                brandIdToNameMap[String(item.id)] = name;
               }
             }
           }
@@ -259,7 +259,10 @@ export function useHardwareCatalog() {
             const rawName = extractRowString(item, ["name", "model", "model_name", "title"]);
             if (!rawName) continue;
 
-            const brand = item.brand || item.manufacturer || "";
+            const brand =
+              item.brand ||
+              item.manufacturer ||
+              (item.brand_id ? brandIdToNameMap[String(item.brand_id)] : "");
             const displayName =
               brand && !rawName.toLowerCase().includes(brand.toLowerCase())
                 ? `${brand} ${rawName}`
@@ -310,7 +313,10 @@ export function useHardwareCatalog() {
           for (const rawItem of tiresRes.value.data) {
             const item = rawItem as Record<string, any>;
             const modelName = extractRowString(item, ["model", "name", "model_name", "title"]);
-            const brand = item.brand || item.manufacturer || "";
+            const brand =
+              item.brand ||
+              item.manufacturer ||
+              (item.brand_id ? brandIdToNameMap[String(item.brand_id)] : "");
             if (modelName) {
               fetchedTires.push(modelName);
               if (brand && !modelName.toLowerCase().includes(brand.toLowerCase())) {
