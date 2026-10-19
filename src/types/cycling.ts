@@ -30,6 +30,7 @@ export interface TireSetup {
   model: string;
   width: string;
   casing: TireCasing;
+  compound?: string | null;
   hasInsert: boolean;
   isTubeless: boolean;
 }
@@ -48,6 +49,8 @@ export interface Bike {
   forkModel: string;
   forkTravel: number; // 0 for rigid
   shockModel: string;
+  rearShockStroke?: number | null; // mm
+  rearWheelTravel?: number | null; // mm
   frontTire: TireSetup;
   rearTire: TireSetup;
 }

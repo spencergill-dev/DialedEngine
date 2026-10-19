@@ -50,21 +50,25 @@ function mapDbRowToBike(row: any): Bike {
       suspensionLayout === "full_suspension"
         ? "Fox Float X2 Factory"
         : "Rigid Frame",
+    rearShockStroke: row.rear_shock_stroke != null ? Number(row.rear_shock_stroke) : null,
+    rearWheelTravel: row.rear_wheel_travel != null ? Number(row.rear_wheel_travel) : null,
     frontTire: {
       wheelSize,
-      manufacturer: "Maxxis",
-      model: "Assegai",
+      manufacturer: row.front_tire_manufacturer || "Maxxis",
+      model: row.front_tire_model || "Assegai",
       width: row.front_tire_width || defaultFrontWidth,
-      casing: "standard",
+      casing: (row.front_tire_casing as any) || "standard",
+      compound: row.front_tire_compound || null,
       hasInsert: false,
       isTubeless: true,
     },
     rearTire: {
       wheelSize,
-      manufacturer: "Maxxis",
-      model: "Minion DHR II",
+      manufacturer: row.rear_tire_manufacturer || "Maxxis",
+      model: row.rear_tire_model || "Minion DHR II",
       width: row.rear_tire_width || defaultRearWidth,
-      casing: "heavy",
+      casing: (row.rear_tire_casing as any) || "heavy",
+      compound: row.rear_tire_compound || null,
       hasInsert: true,
       isTubeless: true,
     },
@@ -434,7 +438,17 @@ export function useCyclingState(
             discipline: newBike.discipline,
             suspension_layout: newBike.suspensionLayout,
             wheel_size: newBike.frontTire?.wheelSize || '29"',
+            rear_shock_stroke: newBike.rearShockStroke ?? null,
+            rear_wheel_travel: newBike.rearWheelTravel ?? null,
+            front_tire_manufacturer: newBike.frontTire?.manufacturer || null,
+            front_tire_model: newBike.frontTire?.model || null,
+            front_tire_casing: newBike.frontTire?.casing || null,
+            front_tire_compound: newBike.frontTire?.compound || null,
             front_tire_width: newBike.frontTire?.width || '2.4"',
+            rear_tire_manufacturer: newBike.rearTire?.manufacturer || null,
+            rear_tire_model: newBike.rearTire?.model || null,
+            rear_tire_casing: newBike.rearTire?.casing || null,
+            rear_tire_compound: newBike.rearTire?.compound || null,
             rear_tire_width: newBike.rearTire?.width || '2.4"',
           })
           .select()
@@ -509,6 +523,26 @@ export function useCyclingState(
           payload.suspension_layout = updated.suspensionLayout;
         if (updated.frontTire?.wheelSize)
           payload.wheel_size = updated.frontTire.wheelSize;
+        if (updated.rearShockStroke !== undefined)
+          payload.rear_shock_stroke = updated.rearShockStroke;
+        if (updated.rearWheelTravel !== undefined)
+          payload.rear_wheel_travel = updated.rearWheelTravel;
+        if (updated.frontTire?.manufacturer !== undefined)
+          payload.front_tire_manufacturer = updated.frontTire.manufacturer;
+        if (updated.frontTire?.model !== undefined)
+          payload.front_tire_model = updated.frontTire.model;
+        if (updated.frontTire?.casing !== undefined)
+          payload.front_tire_casing = updated.frontTire.casing;
+        if (updated.frontTire?.compound !== undefined)
+          payload.front_tire_compound = updated.frontTire.compound;
+        if (updated.rearTire?.manufacturer !== undefined)
+          payload.rear_tire_manufacturer = updated.rearTire.manufacturer;
+        if (updated.rearTire?.model !== undefined)
+          payload.rear_tire_model = updated.rearTire.model;
+        if (updated.rearTire?.casing !== undefined)
+          payload.rear_tire_casing = updated.rearTire.casing;
+        if (updated.rearTire?.compound !== undefined)
+          payload.rear_tire_compound = updated.rearTire.compound;
         if (updated.frontTire?.width)
           payload.front_tire_width = updated.frontTire.width;
         if (updated.rearTire?.width)
