@@ -87,9 +87,9 @@ export function useCyclingState(userId?: string | null) {
       } catch {}
       return {
         displayName: "",
-        weight: 165,
-        heightInches: 71,
-        height: "5' 11\" (180 cm)",
+        weight: null,
+        heightInches: null,
+        height: "",
         ridingStyle: "neutral",
       };
     }
@@ -101,7 +101,7 @@ export function useCyclingState(userId?: string | null) {
         return {
           ...DEFAULT_PROFILE,
           ...parsed,
-          heightInches: parsed.heightInches || 71,
+          heightInches: parsed.heightInches ?? null,
         };
       }
       return DEFAULT_PROFILE;
@@ -203,18 +203,22 @@ export function useCyclingState(userId?: string | null) {
         }
 
         if (profileRow && profileRow.weight_lbs) {
-          const riderName = profileRow.first_name || "Rider";
+          const riderName = profileRow.first_name || "";
           const riderWeight = Number(profileRow.weight_lbs);
-          const riderHeightInches = profileRow.height_inches || 71;
+          const riderHeightInches = profileRow.height_inches ? Number(profileRow.height_inches) : null;
           const riderStyle = profileRow.riding_style || "neutral";
-          const ft = Math.floor(riderHeightInches / 12);
-          const inches = riderHeightInches % 12;
+          let heightDisplay = "";
+          if (riderHeightInches) {
+            const ft = Math.floor(riderHeightInches / 12);
+            const inches = riderHeightInches % 12;
+            heightDisplay = `${ft}' ${inches}" (${Math.round(riderHeightInches * 2.54)} cm)`;
+          }
 
           const loadedProfile: RiderProfile = {
             displayName: riderName,
             weight: riderWeight,
             heightInches: riderHeightInches,
-            height: `${ft}' ${inches}" (${Math.round(riderHeightInches * 2.54)} cm)`,
+            height: heightDisplay,
             ridingStyle: riderStyle,
           };
           setProfile(loadedProfile);
@@ -330,18 +334,22 @@ export function useCyclingState(userId?: string | null) {
     displayName: string;
     weight: number;
     ridingStyle: RidingStyle;
-    heightInches?: number;
+    heightInches?: number | null;
   }) => {
-    const heightInches = profileData.heightInches || 71;
-    const ft = Math.floor(heightInches / 12);
-    const inches = heightInches % 12;
-    const cm = Math.round(heightInches * 2.54);
+    const heightInches = profileData.heightInches ?? null;
+    let heightDisplay = "";
+    if (heightInches) {
+      const ft = Math.floor(heightInches / 12);
+      const inches = heightInches % 12;
+      const cm = Math.round(heightInches * 2.54);
+      heightDisplay = `${ft}' ${inches}" (${cm} cm)`;
+    }
 
     const updatedProfile: RiderProfile = {
       displayName: profileData.displayName,
       weight: profileData.weight,
       heightInches,
-      height: `${ft}' ${inches}" (${cm} cm)`,
+      height: heightDisplay,
       ridingStyle: profileData.ridingStyle,
     };
 
@@ -395,7 +403,7 @@ export function useCyclingState(userId?: string | null) {
             {
               id: userId,
               first_name: profile.displayName || "Rider",
-              weight_lbs: profile.weight || 165,
+              weight_lbs: profile.weight ?? null,
             },
             { onConflict: "id" }
           );

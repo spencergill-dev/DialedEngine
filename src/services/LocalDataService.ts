@@ -8,10 +8,10 @@ export const STORAGE_KEYS = {
 };
 
 export const DEFAULT_PROFILE: RiderProfile = {
-  displayName: "Spencer",
-  weight: 175,
-  heightInches: 71, // 5' 11"
-  height: "5' 11\" (180 cm)",
+  displayName: "",
+  weight: null,
+  heightInches: null,
+  height: "",
   ridingStyle: "neutral",
 };
 
@@ -273,7 +273,7 @@ export class LocalDataService implements IDataService {
         return {
           ...DEFAULT_PROFILE,
           ...parsed,
-          heightInches: parsed.heightInches || 71,
+          heightInches: parsed.heightInches ?? null,
         };
       }
       return DEFAULT_PROFILE;

@@ -54,8 +54,8 @@ export interface Bike {
 
 export interface RiderProfile {
   displayName: string;
-  weight: number; // lbs
-  heightInches: number; // in inches: 54 (4'6") to 82 (6'10")
+  weight: number | null; // lbs
+  heightInches: number | null; // in inches: 54 (4'6") to 82 (6'10")
   height?: string; // optional string display
   ridingStyle: RidingStyle;
 }

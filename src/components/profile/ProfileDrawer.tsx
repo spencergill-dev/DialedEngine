@@ -33,9 +33,9 @@ export function ProfileDrawer({
   const [isEditing, setIsEditing] = useState(false);
 
   // Form draft state
-  const [displayName, setDisplayName] = useState(profile.displayName || "Spencer");
-  const [weight, setWeight] = useState(profile.weight || 175);
-  const [heightInches, setHeightInches] = useState(profile.heightInches || 71);
+  const [displayName, setDisplayName] = useState(profile.displayName || "");
+  const [weight, setWeight] = useState<number | "">(profile.weight ?? "");
+  const [heightInches, setHeightInches] = useState<number | "">(profile.heightInches ?? "");
   const [ridingStyle, setRidingStyle] = useState<RidingStyle>(
     profile.ridingStyle || "neutral"
   );
@@ -43,57 +43,65 @@ export function ProfileDrawer({
   // Sync draft state with props whenever drawer opens
   useEffect(() => {
     if (open) {
-      setDisplayName(profile.displayName || "Spencer");
-      setWeight(profile.weight || 175);
-      setHeightInches(profile.heightInches || 71);
+      setDisplayName(profile.displayName || "");
+      setWeight(profile.weight ?? "");
+      setHeightInches(profile.heightInches ?? "");
       setRidingStyle(profile.ridingStyle || "neutral");
       setIsEditing(false);
     }
   }, [open, profile]);
 
   const handleSave = () => {
-    const trimmedName = displayName.trim() || "Spencer";
-    const feet = Math.floor(heightInches / 12);
-    const inches = heightInches % 12;
-    const cm = Math.round(heightInches * 2.54);
+    const trimmedName = displayName.trim();
+    const numWeight = typeof weight === "number" && weight > 0 ? weight : null;
+    const numHeight = typeof heightInches === "number" && heightInches > 0 ? heightInches : null;
+    let heightStr = "";
+    if (numHeight) {
+      const feet = Math.floor(numHeight / 12);
+      const inches = numHeight % 12;
+      const cm = Math.round(numHeight * 2.54);
+      heightStr = `${feet}' ${inches}" (${cm} cm)`;
+    }
 
     onUpdateProfile({
       displayName: trimmedName,
-      weight,
-      heightInches,
-      height: `${feet}' ${inches}" (${cm} cm)`,
+      weight: numWeight,
+      heightInches: numHeight,
+      height: heightStr,
       ridingStyle,
     });
 
     setIsEditing(false);
     toast.success("Profile successfully updated.", {
-      description: `Rider mass set to ${weight} lbs with ${ridingStyle.replace("_", " ")} dynamics.`,
+      description: numWeight
+        ? `Rider mass set to ${numWeight} lbs with ${ridingStyle.replace("_", " ")} dynamics.`
+        : "Profile updated.",
     });
   };
 
   const handleCancelEdit = () => {
-    setDisplayName(profile.displayName || "Spencer");
-    setWeight(profile.weight || 175);
-    setHeightInches(profile.heightInches || 71);
+    setDisplayName(profile.displayName || "");
+    setWeight(profile.weight ?? "");
+    setHeightInches(profile.heightInches ?? "");
     setRidingStyle(profile.ridingStyle || "neutral");
     setIsEditing(false);
   };
 
-  const currentHeightInches = profile.heightInches || 71;
-  const viewFeet = Math.floor(currentHeightInches / 12);
-  const viewInches = currentHeightInches % 12;
-  const viewCm = Math.round(currentHeightInches * 2.54);
+  const currentHeightInches = profile.heightInches;
+  const viewFeet = currentHeightInches ? Math.floor(currentHeightInches / 12) : null;
+  const viewInches = currentHeightInches ? currentHeightInches % 12 : null;
+  const viewCm = currentHeightInches ? Math.round(currentHeightInches * 2.54) : null;
 
-  const draftFeet = Math.floor(heightInches / 12);
-  const draftInches = heightInches % 12;
-  const draftCm = Math.round(heightInches * 2.54);
+  const draftFeet = typeof heightInches === "number" ? Math.floor(heightInches / 12) : null;
+  const draftInches = typeof heightInches === "number" ? heightInches % 12 : null;
+  const draftCm = typeof heightInches === "number" ? Math.round(heightInches * 2.54) : null;
 
-  const initials = (profile.displayName || "Spencer")
+  const initials = (profile.displayName?.trim() || "R")
     .split(" ")
     .map((n) => n[0])
     .join("")
     .slice(0, 2)
-    .toUpperCase() || "SP";
+    .toUpperCase() || "R";
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -140,7 +148,7 @@ export function ProfileDrawer({
                 </div>
                 <div className="space-y-1">
                   <h3 className="text-lg font-bold text-white font-sans">
-                    {profile.displayName || "Spencer"}
+                    {profile.displayName || "Rider"}
                   </h3>
                   <p className="text-xs text-zinc-400">
                     Active Rider • Dialed Performance
@@ -162,14 +170,16 @@ export function ProfileDrawer({
                   </span>
                   <div className="flex items-baseline gap-1">
                     <span className="text-3xl font-black font-mono tracking-tight text-zinc-100">
-                      {profile.weight}
+                      {profile.weight !== null ? profile.weight : "--"}
                     </span>
                     <span className="text-xs font-mono font-bold text-zinc-400">
                       LBS
                     </span>
                   </div>
                   <span className="text-[10px] font-mono text-zinc-500 block">
-                    {(profile.weight * 0.453592).toFixed(1)} KG with gear
+                    {profile.weight !== null
+                      ? `${(profile.weight * 0.453592).toFixed(1)} KG with gear`
+                      : "Weight not set"}
                   </span>
                 </div>
 
@@ -179,11 +189,11 @@ export function ProfileDrawer({
                   </span>
                   <div className="flex items-baseline gap-1">
                     <span className="text-2xl font-black font-mono tracking-tight text-zinc-100">
-                      {viewFeet}&apos; {viewInches}&quot;
+                      {viewFeet !== null && viewInches !== null ? `${viewFeet}' ${viewInches}"` : "--"}
                     </span>
                   </div>
                   <span className="text-[10px] font-mono text-zinc-500 block">
-                    {viewCm} CM standing
+                    {viewCm !== null ? `${viewCm} CM standing` : "Not specified"}
                   </span>
                 </div>
               </div>
@@ -242,7 +252,7 @@ export function ProfileDrawer({
                   id="edit-name"
                   value={displayName}
                   onChange={(e) => setDisplayName(e.target.value)}
-                  placeholder="e.g. Spencer"
+                  placeholder="Enter your name"
                   className="bg-zinc-900 border-none ring-1 ring-white/10 focus-visible:ring-lime-400"
                 />
               </div>
@@ -254,14 +264,18 @@ export function ProfileDrawer({
                     Rider Height
                   </Label>
                   <span className="text-sm font-black font-mono text-zinc-100">
-                    {draftFeet}&apos; {draftInches}&quot; ({draftCm} CM)
+                    {draftFeet !== null && draftInches !== null ? (
+                      `${draftFeet}' ${draftInches}" (${draftCm} CM)`
+                    ) : (
+                      "--"
+                    )}
                   </span>
                 </div>
                 <Slider
                   min={54}
                   max={82}
                   step={1}
-                  value={[heightInches]}
+                  value={[typeof heightInches === "number" ? heightInches : 68]}
                   onValueChange={(val) => setHeightInches(val[0])}
                   className="py-1 cursor-pointer"
                 />
@@ -283,8 +297,12 @@ export function ProfileDrawer({
                     type="number"
                     min={80}
                     max={280}
+                    placeholder="e.g. 175"
                     value={weight}
-                    onChange={(e) => setWeight(Number(e.target.value) || 160)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setWeight(val === "" ? "" : Number(val));
+                    }}
                     className="w-20 h-8 text-right font-mono text-base md:text-sm bg-zinc-900 border-none ring-1 ring-white/10"
                   />
                 </div>
@@ -292,7 +310,7 @@ export function ProfileDrawer({
                   min={100}
                   max={260}
                   step={1}
-                  value={[weight]}
+                  value={[typeof weight === "number" ? weight : 160]}
                   onValueChange={(val) => setWeight(val[0])}
                   className="py-1 cursor-pointer"
                 />

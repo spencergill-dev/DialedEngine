@@ -21,10 +21,10 @@ export function RiderProfileView({
   profile,
   onUpdateProfile,
 }: RiderProfileViewProps) {
-  const heightInches = profile.heightInches || 71;
-  const feet = Math.floor(heightInches / 12);
-  const inches = heightInches % 12;
-  const cm = Math.round(heightInches * 2.54);
+  const heightInches = profile.heightInches;
+  const feet = heightInches ? Math.floor(heightInches / 12) : null;
+  const inches = heightInches ? heightInches % 12 : null;
+  const cm = heightInches ? Math.round(heightInches * 2.54) : null;
 
   return (
     <div className="space-y-6">
@@ -47,11 +47,12 @@ export function RiderProfileView({
 
             <div className="text-left sm:text-right">
               <span className="text-2xl font-bold font-mono text-slate-100">
-                {profile.weight}
+                {profile.weight !== null ? profile.weight : "--"}
               </span>
               <span className="text-xs text-slate-400 font-mono ml-1">LBS</span>
               <div className="text-[10px] text-slate-500 font-mono">
-                {feet}&apos; {inches}&quot; ({cm} CM) • {(profile.weight * 0.453592).toFixed(1)} KG
+                {feet !== null && inches !== null ? `${feet}' ${inches}" (${cm} CM)` : "--"} •{" "}
+                {profile.weight !== null ? `${(profile.weight * 0.453592).toFixed(1)} KG` : "--"}
               </div>
             </div>
           </div>
@@ -65,7 +66,7 @@ export function RiderProfileView({
             </Label>
             <Input
               id="display-name"
-              placeholder="e.g. Spencer"
+              placeholder="Enter your name"
               value={profile.displayName}
               onChange={(e) =>
                 onUpdateProfile({ displayName: e.target.value })
@@ -104,7 +105,7 @@ export function RiderProfileView({
                 min={54} // 4' 6"
                 max={82} // 6' 10"
                 step={1}
-                value={[heightInches]}
+                value={[heightInches || 68]}
                 onValueChange={(val) => onUpdateProfile({ heightInches: val[0] })}
                 className="py-1 cursor-pointer"
               />
@@ -134,9 +135,10 @@ export function RiderProfileView({
                   type="number"
                   min={80}
                   max={280}
-                  value={profile.weight}
+                  placeholder="e.g. 175"
+                  value={profile.weight ?? ""}
                   onChange={(e) =>
-                    onUpdateProfile({ weight: Number(e.target.value) || 160 })
+                    onUpdateProfile({ weight: e.target.value === "" ? null : Number(e.target.value) })
                   }
                   className="w-24 h-9 text-right font-mono text-base md:text-sm bg-slate-950 border-slate-800"
                 />
@@ -149,7 +151,7 @@ export function RiderProfileView({
                 min={100}
                 max={260}
                 step={1}
-                value={[profile.weight]}
+                value={[profile.weight || 160]}
                 onValueChange={(val) => onUpdateProfile({ weight: val[0] })}
                 className="py-1 cursor-pointer"
               />

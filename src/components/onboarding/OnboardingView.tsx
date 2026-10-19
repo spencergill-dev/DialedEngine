@@ -9,12 +9,12 @@ import {
   Sparkles,
   Loader2,
   Check,
+  Ruler,
 } from "lucide-react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Slider } from "@/components/ui/slider";
 import type { RidingStyle } from "@/types/cycling";
 
 interface OnboardingViewProps {
@@ -23,7 +23,7 @@ interface OnboardingViewProps {
     displayName: string;
     weight: number;
     ridingStyle: RidingStyle;
-    heightInches: number;
+    heightInches: number | null;
   }) => Promise<void> | void;
 }
 
@@ -61,29 +61,40 @@ export function OnboardingView({
   initialDisplayName = "",
   onComplete,
 }: OnboardingViewProps) {
+  // All fields start completely blank without hardcoded fallback numbers
   const [displayName, setDisplayName] = useState(initialDisplayName || "");
-  const [weight, setWeight] = useState(170);
+  const [weight, setWeight] = useState<number | "">("");
   const [ridingStyle, setRidingStyle] = useState<RidingStyle>("neutral");
-  const [heightInches, setHeightInches] = useState(71); // 5' 11"
+  const [heightFeet, setHeightFeet] = useState<number | "">("");
+  const [heightInches, setHeightInches] = useState<number | "">("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const feet = Math.floor(heightInches / 12);
-  const inches = heightInches % 12;
-  const cm = Math.round(heightInches * 2.54);
+  const parsedTotalHeightInches =
+    heightFeet !== "" && heightInches !== ""
+      ? Number(heightFeet) * 12 + Number(heightInches)
+      : null;
+
+  const parsedCm = parsedTotalHeightInches
+    ? Math.round(parsedTotalHeightInches * 2.54)
+    : null;
+
+  const isFormValid =
+    displayName.trim().length > 0 &&
+    typeof weight === "number" &&
+    weight >= 70 &&
+    weight <= 400;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!displayName.trim()) {
-      return;
-    }
+    if (!isFormValid || isSubmitting) return;
 
     setIsSubmitting(true);
     try {
       await onComplete({
         displayName: displayName.trim(),
-        weight,
+        weight: Number(weight),
         ridingStyle,
-        heightInches,
+        heightInches: parsedTotalHeightInches,
       });
     } finally {
       setIsSubmitting(false);
@@ -130,14 +141,14 @@ export function OnboardingView({
             <Input
               type="text"
               required
-              placeholder="e.g. Spencer"
+              placeholder="Enter your name or call-sign"
               value={displayName}
               onChange={(e) => setDisplayName(e.target.value)}
               className="h-11 bg-zinc-900 border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus-visible:ring-lime-400 focus-visible:border-lime-400 font-medium"
             />
           </div>
 
-          {/* 2. Rider Weight (lbs) */}
+          {/* 2. Rider Weight (lbs) - Starts completely blank, forcing user entry */}
           <div className="space-y-3 p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800/60">
             <div className="flex items-center justify-between">
               <Label className="text-xs font-bold uppercase tracking-wider text-zinc-300 flex items-center gap-1.5">
@@ -145,27 +156,42 @@ export function OnboardingView({
                 <span>Riding Weight (With Gear)</span>
               </Label>
               <div className="flex items-center gap-1.5">
-                <span className="font-mono text-xl font-black text-lime-400">
-                  {weight}
-                </span>
-                <span className="text-xs font-bold text-zinc-400">LBS</span>
-                <span className="text-[11px] font-mono text-zinc-500 ml-1">
-                  ({Math.round(weight * 0.453592)} kg)
-                </span>
+                {weight !== "" ? (
+                  <>
+                    <span className="font-mono text-xl font-black text-lime-400">
+                      {weight}
+                    </span>
+                    <span className="text-xs font-bold text-zinc-400">LBS</span>
+                    <span className="text-[11px] font-mono text-zinc-500 ml-1">
+                      ({Math.round(Number(weight) * 0.453592)} kg)
+                    </span>
+                  </>
+                ) : (
+                  <span className="text-[11px] font-mono font-bold text-amber-400/90 uppercase tracking-wider bg-amber-400/10 px-2 py-0.5 rounded border border-amber-400/20">
+                    Required
+                  </span>
+                )}
               </div>
             </div>
 
-            <Slider
-              min={100}
-              max={280}
-              step={1}
-              value={[weight]}
-              onValueChange={([val]) => setWeight(val)}
-              className="py-1 cursor-pointer"
-            />
+            <div className="relative">
+              <Input
+                type="number"
+                required
+                min={70}
+                max={400}
+                placeholder="Enter weight in lbs (e.g. 175)"
+                value={weight}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  setWeight(val === "" ? "" : Number(val));
+                }}
+                className="h-11 bg-zinc-900 border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus-visible:ring-lime-400 focus-visible:border-lime-400 font-medium font-mono text-sm"
+              />
+            </div>
 
             <p className="text-[11px] text-zinc-400">
-              Includes helmet, hydration pack, shoes, and tools ready to drop in.
+              Measured in full gear: helmet, pack, shoes, and hydration tools ready to drop in.
             </p>
           </div>
 
@@ -227,31 +253,59 @@ export function OnboardingView({
             </div>
           </div>
 
-          {/* 4. Height (Inches) */}
-          <div className="space-y-2 p-4 rounded-2xl bg-zinc-900/40 border border-zinc-800/50">
+          {/* 4. Height (Optional) - Starts completely blank */}
+          <div className="space-y-3 p-4 rounded-2xl bg-zinc-900/40 border border-zinc-800/50">
             <div className="flex items-center justify-between">
-              <Label className="text-xs font-bold uppercase tracking-wider text-zinc-400">
-                Rider Height
+              <Label className="text-xs font-bold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                <Ruler className="w-3.5 h-3.5 text-zinc-400" />
+                <span>Rider Height (Optional)</span>
               </Label>
               <span className="text-xs font-bold text-zinc-300 font-mono">
-                {feet}&apos; {inches}&quot; ({cm} cm)
+                {parsedTotalHeightInches !== null
+                  ? `${heightFeet}' ${heightInches}" (${parsedCm} cm)`
+                  : "--"}
               </span>
             </div>
-            <Slider
-              min={58}
-              max={82}
-              step={1}
-              value={[heightInches]}
-              onValueChange={([val]) => setHeightInches(val)}
-              className="py-1 cursor-pointer"
-            />
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">Feet</span>
+                <Input
+                  type="number"
+                  min={4}
+                  max={7}
+                  placeholder="e.g. 5"
+                  value={heightFeet}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setHeightFeet(val === "" ? "" : Number(val));
+                  }}
+                  className="h-10 bg-zinc-900 border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus-visible:ring-lime-400 font-mono text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-semibold">Inches</span>
+                <Input
+                  type="number"
+                  min={0}
+                  max={11}
+                  placeholder="e.g. 10"
+                  value={heightInches}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setHeightInches(val === "" ? "" : Number(val));
+                  }}
+                  className="h-10 bg-zinc-900 border-zinc-800 rounded-xl text-white placeholder:text-zinc-600 focus-visible:ring-lime-400 font-mono text-sm"
+                />
+              </div>
+            </div>
           </div>
 
           {/* Submit Button */}
           <Button
             type="submit"
-            disabled={!displayName.trim() || isSubmitting}
-            className="w-full h-12 bg-lime-400 hover:bg-lime-300 text-black font-extrabold text-sm rounded-2xl flex items-center justify-center gap-2 shadow-[0_0_24px_rgba(163,230,53,0.3)] transition-all disabled:opacity-50 border-none cursor-pointer"
+            disabled={!isFormValid || isSubmitting}
+            className="w-full h-12 bg-lime-400 hover:bg-lime-300 text-black font-extrabold text-sm rounded-2xl flex items-center justify-center gap-2 shadow-[0_0_24px_rgba(163,230,53,0.3)] transition-all disabled:opacity-40 border-none cursor-pointer"
           >
             {isSubmitting ? (
               <>

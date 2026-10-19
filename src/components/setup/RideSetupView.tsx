@@ -462,7 +462,7 @@ export function RideSetupView({
 
           <div className="flex items-center gap-2 pl-3.5 sm:pl-0 flex-wrap">
             <span className="px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-[11px] font-bold text-zinc-200">
-              <span className="font-mono">{profile.weight}</span> LBS
+              <span className="font-mono">{profile.weight ?? "--"}</span> LBS
             </span>
             <span className="px-2.5 py-1 rounded-md bg-zinc-900 border border-zinc-800 text-[11px] font-medium text-zinc-300 capitalize">
               {bikeDiscipline.replace("_", " ")}

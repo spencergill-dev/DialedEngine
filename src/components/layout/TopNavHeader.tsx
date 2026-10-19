@@ -25,14 +25,14 @@ export function TopNavHeader({
   onSelectView,
   onSelectBike,
 }: TopNavHeaderProps) {
-  const displayName = profile.displayName?.trim() || "Spencer";
+  const displayName = profile.displayName?.trim() || "Rider";
   const initials =
     displayName
       .split(" ")
       .map((n) => n[0])
       .join("")
       .slice(0, 2)
-      .toUpperCase() || "SP";
+      .toUpperCase() || "R";
 
   const displayBrand =
     activeBike?.brand === "Custom"

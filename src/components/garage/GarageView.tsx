@@ -97,7 +97,8 @@ export function GarageView({
     }
   };
 
-  const ownerName = profile.displayName?.trim() || "Spencer";
+  const ownerName = profile.displayName?.trim();
+  const garageTitle = ownerName ? `${ownerName}'s Garage` : "Your Garage";
   const activeDetailBike = bikes.find((b) => b.id === selectedBikeId) || null;
 
   return (
@@ -116,7 +117,7 @@ export function GarageView({
           </Button>
           <div>
             <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white font-sans">
-              {ownerName}&apos;s Garage
+              {garageTitle}
             </h1>
             <p className="text-xs text-zinc-400 mt-0.5">
               {bikes.length} {bikes.length === 1 ? "active setup" : "active setups"}
