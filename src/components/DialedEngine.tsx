@@ -83,6 +83,21 @@ export function DialedEngine() {
     setMainView("garage");
   };
 
+  const handleAccountDeleted = () => {
+    if (session?.user?.id) {
+      const uid = session.user.id;
+      try {
+        localStorage.removeItem(`dialed_profile_${uid}`);
+        localStorage.removeItem(`dialed_bikes_${uid}`);
+        localStorage.removeItem(`dialed_active_bike_${uid}`);
+        localStorage.removeItem(`dialed_onboarded_${uid}`);
+      } catch {}
+    }
+    setSession(null);
+    setIsGuestMode(false);
+    setMainView("garage");
+  };
+
   const isHydrating = Boolean(isAuthLoading || (session && isSyncing && !hasCompletedOnboarding));
 
   return (
@@ -169,6 +184,7 @@ export function DialedEngine() {
                 onUpdateProfile={updateProfile}
                 onBackToSetup={() => setMainView("setup")}
                 onSignOut={handleSignOut}
+                onAccountDeleted={handleAccountDeleted}
               />
             )}
 

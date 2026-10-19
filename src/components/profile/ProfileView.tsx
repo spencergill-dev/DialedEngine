@@ -10,6 +10,8 @@ import {
   ArrowLeft,
   Cloud,
   LogOut,
+  AlertTriangle,
+  Trash2,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -21,6 +23,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "@/components/ui/sonner";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { ProfileSkeleton } from "./ProfileSkeleton";
+import { DeleteAccountDialog } from "./DeleteAccountDialog";
 import { supabase } from "@/lib/supabaseClient";
 import type { RiderProfile, RidingStyle } from "@/types/cycling";
 
@@ -30,6 +33,7 @@ interface ProfileViewProps {
   onUpdateProfile: (partial: Partial<RiderProfile>) => void;
   onBackToSetup: () => void;
   onSignOut?: () => void;
+  onAccountDeleted?: () => void;
 }
 
 export function ProfileView({
@@ -38,18 +42,23 @@ export function ProfileView({
   onUpdateProfile,
   onBackToSetup,
   onSignOut,
+  onAccountDeleted,
 }: ProfileViewProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [userEmail, setUserEmail] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string>("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data: { user } }) => {
       if (user?.email) setUserEmail(user.email);
+      if (user?.id) setUserId(user.id);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUserEmail(session?.user?.email || null);
+      if (session?.user?.id) setUserId(session.user.id);
     });
 
     return () => subscription.unsubscribe();
@@ -369,6 +378,31 @@ export function ProfileView({
                 </Button>
               )}
             </div>
+
+            {/* Danger Zone: Account Deletion */}
+            <div className="p-5 rounded-2xl bg-red-950/20 border border-red-900/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 text-red-400" />
+                  <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-red-300">
+                    DANGER ZONE
+                  </span>
+                </div>
+                <p className="text-xs text-zinc-400 max-w-lg">
+                  Permanently delete your account, your bicycle fleet, and all calibrated suspension and tire pressure records. This action cannot be reversed.
+                </p>
+              </div>
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setIsDeleteDialogOpen(true)}
+                className="h-9 px-4 border-red-900/60 bg-red-950/40 hover:bg-red-900/50 text-red-300 hover:text-white font-bold text-xs rounded-xl shrink-0 gap-1.5 shadow-sm transition-colors cursor-pointer"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>Delete My Account</span>
+              </Button>
+            </div>
           </motion.div>
         ) : (
           /* IN-PLACE EDIT MODE */
@@ -551,6 +585,18 @@ export function ProfileView({
           if (user.name) {
             onUpdateProfile({ displayName: user.name });
           }
+        }}
+      />
+
+      {/* Delete Account 2-Step Confirmation Dialog */}
+      <DeleteAccountDialog
+        isOpen={isDeleteDialogOpen}
+        onClose={() => setIsDeleteDialogOpen(false)}
+        userId={userId}
+        userEmail={userEmail}
+        onAccountDeleted={() => {
+          setIsDeleteDialogOpen(false);
+          onAccountDeleted?.();
         }}
       />
     </div>
