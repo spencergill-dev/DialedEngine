@@ -29,55 +29,19 @@ import type {
   WheelSize,
   TireSetup,
 } from "@/types/cycling";
+import {
+  getTireManufacturers,
+  getTireModels,
+  getTireCasings,
+  getTireCompounds,
+  DEFAULT_TIRE_CASINGS,
+  DEFAULT_TIRE_COMPOUNDS,
+  TIRE_MANUFACTURERS,
+} from "@/data/tireCatalog";
 
-export const TIRE_MANUFACTURERS: string[] = [
-  "Maxxis",
-  "Schwalbe",
-  "Continental",
-  "Specialized",
-  "Michelin",
-  "Vittoria",
-  "Pirelli",
-  "Bontrager",
-  "WTB",
-  "Goodyear",
-  "Panaracer",
-  "Teravail",
-  "Kenda",
-];
-
-export const TIRE_CASINGS: string[] = [
-  "EXO",
-  "EXO+",
-  "DoubleDown (DD)",
-  "Downhill (DH)",
-  "Super Trail",
-  "Super Gravity",
-  "Super Downhill",
-  "Enduro",
-  "Grid Trail",
-  "Grid Gravity",
-  "Standard (Single-Ply)",
-  "Light (XC / Race)",
-];
-
-export const TIRE_COMPOUNDS: string[] = [
-  "MaxxGrip (3C)",
-  "MaxxTerra (3C)",
-  "MaxxSpeed (3C)",
-  "Dual Compound",
-  "Addix Ultra Soft",
-  "Addix Soft",
-  "Addix Speedgrip",
-  "BlackChili",
-  "GripTon T9",
-  "GripTon T7",
-  "GripTon T5",
-  "Magi-X",
-  "Gum-X",
-  "Graphene 2.0 4C",
-  "Standard Compound",
-];
+export { TIRE_MANUFACTURERS };
+export const TIRE_CASINGS = DEFAULT_TIRE_CASINGS;
+export const TIRE_COMPOUNDS = DEFAULT_TIRE_COMPOUNDS;
 
 interface BikeBuilderDialogProps {
   open: boolean;
@@ -185,7 +149,6 @@ export function BikeBuilderDialog({
     modelsByBrand,
     forks: catalogForks,
     shocks: catalogShocks,
-    tires: catalogTires,
   } = useHardwareCatalog();
 
   const [brand, setBrand] = useState("Santa Cruz");
@@ -446,6 +409,68 @@ export function BikeBuilderDialog({
 
   const frontWidthOptions = getTireWidthsForWheelSize(frontTire.wheelSize);
   const rearWidthOptions = getTireWidthsForWheelSize(rearTire.wheelSize);
+
+  const frontManufacturerOptions = getTireManufacturers();
+  const frontModelOptions = getTireModels(frontTire.manufacturer);
+  const frontCasingOptions = getTireCasings(frontTire.manufacturer, frontTire.model);
+  const frontCompoundOptions = getTireCompounds(frontTire.manufacturer, frontTire.model);
+
+  const rearManufacturerOptions = getTireManufacturers();
+  const rearModelOptions = getTireModels(rearTire.manufacturer);
+  const rearCasingOptions = getTireCasings(rearTire.manufacturer, rearTire.model);
+  const rearCompoundOptions = getTireCompounds(rearTire.manufacturer, rearTire.model);
+
+  // Cascading reset handlers for Front Tire
+  const handleFrontManufacturerChange = (val: string) => {
+    setFrontTire((prev) => {
+      if (prev.manufacturer === val) return prev;
+      return {
+        ...prev,
+        manufacturer: val,
+        model: "",
+        casing: "",
+        compound: "",
+      };
+    });
+  };
+
+  const handleFrontModelChange = (val: string) => {
+    setFrontTire((prev) => {
+      if (prev.model === val) return prev;
+      return {
+        ...prev,
+        model: val,
+        casing: "",
+        compound: "",
+      };
+    });
+  };
+
+  // Cascading reset handlers for Rear Tire
+  const handleRearManufacturerChange = (val: string) => {
+    setRearTire((prev) => {
+      if (prev.manufacturer === val) return prev;
+      return {
+        ...prev,
+        manufacturer: val,
+        model: "",
+        casing: "",
+        compound: "",
+      };
+    });
+  };
+
+  const handleRearModelChange = (val: string) => {
+    setRearTire((prev) => {
+      if (prev.model === val) return prev;
+      return {
+        ...prev,
+        model: val,
+        casing: "",
+        compound: "",
+      };
+    });
+  };
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
@@ -755,11 +780,9 @@ export function BikeBuilderDialog({
                   <Label className="text-[11px] text-zinc-400">Manufacturer</Label>
                   <Combobox
                     value={frontTire.manufacturer || ""}
-                    onChange={(val) =>
-                      setFrontTire((prev) => ({ ...prev, manufacturer: val }))
-                    }
-                    options={TIRE_MANUFACTURERS}
-                    placeholder="e.g. Maxxis"
+                    onChange={handleFrontManufacturerChange}
+                    options={frontManufacturerOptions}
+                    placeholder="e.g. Maxxis, Schwalbe"
                     className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
                   />
                 </div>
@@ -768,11 +791,9 @@ export function BikeBuilderDialog({
                   <Label className="text-[11px] text-zinc-400">Tire Model</Label>
                   <Combobox
                     value={frontTire.model || ""}
-                    onChange={(val) =>
-                      setFrontTire((prev) => ({ ...prev, model: val }))
-                    }
-                    options={catalogTires}
-                    placeholder="e.g. Assegai"
+                    onChange={handleFrontModelChange}
+                    options={frontModelOptions}
+                    placeholder="e.g. Assegai, Magic Mary"
                     className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
                   />
                 </div>
@@ -805,7 +826,7 @@ export function BikeBuilderDialog({
                     onChange={(val) =>
                       setFrontTire((prev) => ({ ...prev, casing: val as any }))
                     }
-                    options={TIRE_CASINGS}
+                    options={frontCasingOptions}
                     placeholder="e.g. EXO, DoubleDown"
                     className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
                   />
@@ -818,7 +839,7 @@ export function BikeBuilderDialog({
                     onChange={(val) =>
                       setFrontTire((prev) => ({ ...prev, compound: val }))
                     }
-                    options={TIRE_COMPOUNDS}
+                    options={frontCompoundOptions}
                     placeholder="e.g. MaxxGrip, MaxxTerra"
                     className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
                   />
@@ -949,11 +970,9 @@ export function BikeBuilderDialog({
                     <Label className="text-[11px] text-zinc-400">Manufacturer</Label>
                     <Combobox
                       value={rearTire.manufacturer || ""}
-                      onChange={(val) =>
-                        setRearTire((prev) => ({ ...prev, manufacturer: val }))
-                      }
-                      options={TIRE_MANUFACTURERS}
-                      placeholder="e.g. Maxxis"
+                      onChange={handleRearManufacturerChange}
+                      options={rearManufacturerOptions}
+                      placeholder="e.g. Maxxis, Schwalbe"
                       className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
                     />
                   </div>
@@ -962,11 +981,9 @@ export function BikeBuilderDialog({
                     <Label className="text-[11px] text-zinc-400">Tire Model</Label>
                     <Combobox
                       value={rearTire.model || ""}
-                      onChange={(val) =>
-                        setRearTire((prev) => ({ ...prev, model: val }))
-                      }
-                      options={catalogTires}
-                      placeholder="e.g. Minion DHR II"
+                      onChange={handleRearModelChange}
+                      options={rearModelOptions}
+                      placeholder="e.g. Minion DHR II, Big Betty"
                       className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
                     />
                   </div>
@@ -999,7 +1016,7 @@ export function BikeBuilderDialog({
                       onChange={(val) =>
                         setRearTire((prev) => ({ ...prev, casing: val as any }))
                       }
-                      options={TIRE_CASINGS}
+                      options={rearCasingOptions}
                       placeholder="e.g. DoubleDown, DH"
                       className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
                     />
@@ -1012,7 +1029,7 @@ export function BikeBuilderDialog({
                       onChange={(val) =>
                         setRearTire((prev) => ({ ...prev, compound: val }))
                       }
-                      options={TIRE_COMPOUNDS}
+                      options={rearCompoundOptions}
                       placeholder="e.g. MaxxTerra, Addix Soft"
                       className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
                     />
