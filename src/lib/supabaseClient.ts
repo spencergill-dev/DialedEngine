@@ -175,7 +175,7 @@ export const supabase: SupabaseClient<any, "public", any> = createClient(
       persistSession: true,
       autoRefreshToken: true,
       detectSessionInUrl: true,
-      storage: customStorageAdapter,
+      storage: typeof window !== "undefined" ? window.localStorage : undefined,
       storageKey: SUPABASE_STORAGE_KEY,
       lock: safariBypassLock,
     },

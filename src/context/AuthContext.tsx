@@ -53,11 +53,58 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // 2. Background Validation & Refresh:
-    // Let supabase.auth.onAuthStateChange handle actual token validation and refresh
-    // in the background *after* the initial optimistic render.
-    // We intentionally DO NOT call `await supabase.auth.getSession()` on mount to prevent
-    // any navigator.locks queue stall on mobile Safari.
+    // 1. Fail-Fast Hydration:
+    // Wrap initial supabase.auth.getSession() in a 1500ms timeout race condition.
+    // If Safari hangs on the Web Locks API, catch the timeout, log the warning,
+    // and force the app to render the unauthenticated state (or optimistic cached state)
+    // immediately so the user is never stuck waiting 20 seconds.
+    const AUTH_TIMEOUT_MS = 1500;
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const timeoutPromise = new Promise<{ timeout: true }>((resolve) => {
+      timeoutId = setTimeout(() => resolve({ timeout: true }), AUTH_TIMEOUT_MS);
+    });
+
+    const sessionPromise = supabase.auth.getSession().catch((err) => {
+      console.warn("[AuthProvider] getSession error:", err);
+      return { data: { session: null }, error: err };
+    });
+
+    Promise.race([sessionPromise, timeoutPromise])
+      .then((result) => {
+        if (!isMounted) return;
+
+        if ("timeout" in result) {
+          console.warn(
+            `[AuthProvider] Safari Web Locks / getSession timed out after ${AUTH_TIMEOUT_MS}ms. Forcing immediate render with optimistic or unauthenticated state.`
+          );
+          // Release loading state immediately: UI will display optimistic cached session
+          // if available, or unauthenticated view if none exists.
+          setIsAuthLoading(false);
+          return;
+        }
+
+        const { data: { session: verifiedSession }, error } = result;
+        if (error) {
+          console.warn("[AuthProvider] Session verification error:", error);
+        }
+
+        if (verifiedSession) {
+          setSession(verifiedSession);
+        } else {
+          // If server verified there is no active session, clear state
+          setSession(null);
+        }
+        setIsAuthLoading(false);
+      })
+      .catch((err) => {
+        console.warn("[AuthProvider] Auth race exception:", err);
+        if (isMounted) {
+          setIsAuthLoading(false);
+        }
+      });
+
+    // 2. Global listener for auth state changes & background token refresh
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, newSession) => {
@@ -69,17 +116,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
-    // Fast-path safety fallback: If onAuthStateChange hasn't emitted within 100ms
-    // (e.g. for brand new unauthenticated users or offline mode), release loading state.
-    const fallbackTimer = setTimeout(() => {
-      if (isMounted) {
-        setIsAuthLoading(false);
-      }
-    }, 100);
-
     return () => {
       isMounted = false;
-      clearTimeout(fallbackTimer);
+      clearTimeout(timeoutId);
       subscription.unsubscribe();
     };
   }, []);
