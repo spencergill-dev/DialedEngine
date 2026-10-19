@@ -216,7 +216,7 @@ export function GarageView({
                   }}
                   transition={{ layout: { duration: 0.25, ease: [0.32, 0.72, 0, 1] } }}
                   onClick={() => handleRowClick(bike)}
-                  className="group flex items-center justify-between p-3.5 -mx-3.5 rounded-2xl cursor-pointer hover:bg-zinc-900/60 transition-colors border-b border-zinc-800/40 last:border-b-0"
+                  className="group flex items-center justify-between p-3.5 rounded-2xl cursor-pointer hover:bg-zinc-900/60 transition-colors border-b border-zinc-800/40 last:border-b-0 w-full"
                 >
                   <div className="flex items-center gap-3.5 min-w-0">
                     {/* Left: Bike Avatar rounded square w-12 h-12 bg-zinc-900 with Lucide Bike icon */}

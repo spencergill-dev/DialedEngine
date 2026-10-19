@@ -70,6 +70,11 @@
   * {
     @apply border-border;
   }
+  html,
+  body,
+  #root {
+    @apply w-full max-w-full overflow-x-hidden;
+  }
   body {
     @apply bg-[#111111] text-zinc-100 antialiased selection:bg-lime-500/25 selection:text-lime-300;
     font-feature-settings: "cv02", "cv03", "cv04", "cv11";

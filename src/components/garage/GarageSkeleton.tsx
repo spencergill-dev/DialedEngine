@@ -20,7 +20,7 @@ export function GarageSkeleton() {
         {[1, 2, 3].map((idx) => (
           <div
             key={idx}
-            className="flex items-center justify-between p-4 -mx-3.5 rounded-2xl bg-zinc-950/40 border border-zinc-800/40"
+            className="flex items-center justify-between p-4 rounded-2xl bg-zinc-950/40 border border-zinc-800/40 w-full"
           >
             <div className="flex items-center gap-3.5 min-w-0">
               {/* Bike Icon Thumbnail */}

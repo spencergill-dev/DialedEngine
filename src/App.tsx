@@ -2,7 +2,7 @@ import DialedEngine from "@/components/DialedEngine";
 
 export function App() {
   return (
-    <div className="flex flex-col h-[100dvh] w-full bg-[#111111] text-zinc-100 selection:bg-lime-500/20 selection:text-lime-300 relative overflow-hidden">
+    <div className="flex flex-col min-h-[100dvh] h-[100dvh] w-full max-w-full bg-[#111111] text-zinc-100 selection:bg-lime-500/20 selection:text-lime-300 relative overflow-x-hidden overflow-y-hidden">
       {/* Ambient Atmospheric Depth (Subtle Top-Center Radial Glow at 5% Opacity) */}
       <div
         aria-hidden="true"

@@ -7,7 +7,7 @@ import { RideSetupView } from "./setup/RideSetupView";
 import { LoginView } from "./auth/LoginView";
 import { OnboardingView } from "./onboarding/OnboardingView";
 import { Toaster } from "@/components/ui/sonner";
-import { GlobalAppLoader } from "./common/GlobalAppLoader";
+import { SplashScreen } from "./common/SplashScreen";
 import { useCyclingState } from "@/hooks/useCyclingState";
 import { supabase, isSupabaseConfigured } from "@/lib/supabaseClient";
 import type { Session } from "@supabase/supabase-js";
@@ -16,6 +16,7 @@ export function DialedEngine() {
   const [session, setSession] = useState<Session | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
   const [isGuestMode, setIsGuestMode] = useState(false);
+  const [isSplashDismissed, setIsSplashDismissed] = useState(false);
   const [mainView, setMainView] = useState<"setup" | "garage" | "profile">("garage");
 
   // Track Supabase Auth session & handle routing transitions
@@ -82,137 +83,129 @@ export function DialedEngine() {
     setMainView("garage");
   };
 
-  // 1. Initial Auth Check or Cloud Profile Verification Loading State
-  if (isAuthLoading || (session && isSyncing && !hasCompletedOnboarding)) {
-    return (
-      <GlobalAppLoader
-        status={isAuthLoading ? "INITIALIZING SETUP OS" : "SYNCING RIDER PROFILE"}
-        substatus={
-          isAuthLoading
-            ? "Verifying authentication state & telemetry services..."
-            : "Retrieving baseline metrics and suspension calibrations..."
-        }
-      />
-    );
-  }
+  const isHydrating = Boolean(isAuthLoading || (session && isSyncing && !hasCompletedOnboarding));
 
-  // 2. Unauthenticated Routing: Redirect to LoginView
-  if (!session && !isGuestMode) {
-    return (
-      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto bg-[#111111]">
-        <LoginView
-          onSuccess={() => {
-            setMainView("garage");
-          }}
-          onContinueAsGuest={() => {
-            setIsGuestMode(true);
-            setMainView("garage");
-          }}
-        />
-        <Toaster position="bottom-right" richColors />
-      </div>
-    );
-  }
-
-  // 3. New Rider Onboarding Flow: Profile baseline setup before entering garage
-  if (session && !isGuestMode && !hasCompletedOnboarding) {
-    return (
-      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto bg-[#111111]">
-        <OnboardingView
-          initialDisplayName={profile.displayName}
-          onComplete={async (profileData) => {
-            await completeOnboarding(profileData);
-            setMainView("garage");
-          }}
-        />
-        <Toaster position="bottom-right" richColors />
-      </div>
-    );
-  }
-
-  // 4. Authenticated Application OS (Defaulting to Garage upon login)
   return (
-    <div className="bg-transparent text-zinc-100 font-sans selection:bg-lime-500/25 selection:text-lime-300 flex-1 flex flex-col min-h-0 relative z-10 overflow-hidden">
-      {/* Fixed Sibling Header */}
-      <TopNavHeader
-        profile={profile}
-        bikes={bikes}
-        activeBike={activeBike}
-        mainView={mainView}
-        onSelectView={setMainView}
-        onSelectBike={setActiveBikeId}
-      />
+    <div className="flex-1 flex flex-col min-h-0 w-full max-w-full overflow-x-hidden relative">
+      {/* Native App Launch Screen Overlay */}
+      {!isSplashDismissed && (
+        <SplashScreen
+          isHydrating={isHydrating}
+          onFinish={() => setIsSplashDismissed(true)}
+        />
+      )}
 
-      {/* Direct Sibling: Scrolling Content Flex Child */}
-      <main className="flex-1 overflow-y-auto pb-24 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-4">
-        {mainView === "setup" && (
-          <RideSetupView
+      {/* 1. Unauthenticated Routing: Redirect to LoginView */}
+      {!session && !isGuestMode ? (
+        <div className="flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden bg-[#111111] w-full max-w-full">
+          <LoginView
+            onSuccess={() => {
+              setMainView("garage");
+            }}
+            onContinueAsGuest={() => {
+              setIsGuestMode(true);
+              setMainView("garage");
+            }}
+          />
+          <Toaster position="bottom-right" richColors />
+        </div>
+      ) : session && !isGuestMode && !hasCompletedOnboarding ? (
+        /* 2. New Rider Onboarding Flow: Profile baseline setup before entering garage */
+        <div className="flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden bg-[#111111] w-full max-w-full">
+          <OnboardingView
+            initialDisplayName={profile.displayName}
+            onComplete={async (profileData) => {
+              await completeOnboarding(profileData);
+              setMainView("garage");
+            }}
+          />
+          <Toaster position="bottom-right" richColors />
+        </div>
+      ) : (
+        /* 3. Authenticated Application OS (Defaulting to Garage upon login) */
+        <div className="bg-transparent text-zinc-100 font-sans selection:bg-lime-500/25 selection:text-lime-300 flex-1 flex flex-col min-h-0 relative z-10 overflow-x-hidden overflow-y-hidden w-full max-w-full">
+          {/* Fixed Sibling Header */}
+          <TopNavHeader
+            profile={profile}
             bikes={bikes}
-            activeBikeId={activeBikeId}
+            activeBike={activeBike}
+            mainView={mainView}
+            onSelectView={setMainView}
             onSelectBike={setActiveBikeId}
-            profile={profile}
-            onSwitchToGarage={() => setMainView("garage")}
-            onUpdateBike={updateBike}
-            onAddBike={addBike}
           />
-        )}
 
-        {mainView === "garage" && (
-          <GarageView
-            profile={profile}
-            bikes={bikes}
-            activeBikeId={activeBikeId}
-            isLoading={isSyncing}
-            onSelectActiveBike={setActiveBikeId}
-            onAddBike={addBike}
-            onUpdateBike={updateBike}
-            onDeleteBike={deleteBike}
-            onBackToSetup={() => setMainView("setup")}
-          />
-        )}
-
-        {mainView === "profile" && (
-          <ProfileView
-            profile={profile}
-            isLoading={isSyncing}
-            onUpdateProfile={updateProfile}
-            onBackToSetup={() => setMainView("setup")}
-            onSignOut={handleSignOut}
-          />
-        )}
-
-        {/* Desktop Footer (Inside scrollable container) */}
-        <footer className="hidden md:block mt-12 py-8 text-center text-xs text-zinc-400 border-t border-zinc-800/50 font-sans">
-          <div className="flex items-center justify-center gap-2">
-            <span className="font-semibold text-zinc-300">DIALED</span>
-            <span>•</span>
-            <span>High-Performance Cycling Setup OS</span>
-            <span>•</span>
-            <span>SRAM AXS & Strava Calibrated</span>
-            {session && (
-              <>
-                <span>•</span>
-                <button
-                  onClick={handleSignOut}
-                  className="text-zinc-500 hover:text-zinc-300 underline transition-colors cursor-pointer"
-                >
-                  Sign Out ({session.user?.email})
-                </button>
-              </>
+          {/* Direct Sibling: Scrolling Content Flex Child */}
+          <main className="flex-1 overflow-y-auto overflow-x-hidden pb-24 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-4">
+            {mainView === "setup" && (
+              <RideSetupView
+                bikes={bikes}
+                activeBikeId={activeBikeId}
+                onSelectBike={setActiveBikeId}
+                profile={profile}
+                onSwitchToGarage={() => setMainView("garage")}
+                onUpdateBike={updateBike}
+                onAddBike={addBike}
+              />
             )}
-          </div>
-        </footer>
-      </main>
 
-      {/* iOS-Style Fixed Mobile Bottom Tab Bar */}
-      <MobileBottomNav
-        mainView={mainView}
-        onSelectView={setMainView}
-        bikesCount={bikes.length}
-      />
+            {mainView === "garage" && (
+              <GarageView
+                profile={profile}
+                bikes={bikes}
+                activeBikeId={activeBikeId}
+                isLoading={isSyncing}
+                onSelectActiveBike={setActiveBikeId}
+                onAddBike={addBike}
+                onUpdateBike={updateBike}
+                onDeleteBike={deleteBike}
+                onBackToSetup={() => setMainView("setup")}
+              />
+            )}
 
-      {/* App-wide Sonner Toaster Notifications */}
-      <Toaster position="bottom-right" richColors />
+            {mainView === "profile" && (
+              <ProfileView
+                profile={profile}
+                isLoading={isSyncing}
+                onUpdateProfile={updateProfile}
+                onBackToSetup={() => setMainView("setup")}
+                onSignOut={handleSignOut}
+              />
+            )}
+
+            {/* Desktop Footer (Inside scrollable container) */}
+            <footer className="hidden md:block mt-12 py-8 text-center text-xs text-zinc-400 border-t border-zinc-800/50 font-sans">
+              <div className="flex items-center justify-center gap-2">
+                <span className="font-semibold text-zinc-300">DIALED</span>
+                <span>•</span>
+                <span>High-Performance Cycling Setup OS</span>
+                <span>•</span>
+                <span>SRAM AXS & Strava Calibrated</span>
+                {session && (
+                  <>
+                    <span>•</span>
+                    <button
+                      onClick={handleSignOut}
+                      className="text-zinc-500 hover:text-zinc-300 underline transition-colors cursor-pointer"
+                    >
+                      Sign Out ({session.user?.email})
+                    </button>
+                  </>
+                )}
+              </div>
+            </footer>
+          </main>
+
+          {/* iOS-Style Fixed Mobile Bottom Tab Bar */}
+          <MobileBottomNav
+            mainView={mainView}
+            onSelectView={setMainView}
+            bikesCount={bikes.length}
+          />
+
+          {/* App-wide Sonner Toaster Notifications */}
+          <Toaster position="bottom-right" richColors />
+        </div>
+      )}
     </div>
   );
 }
