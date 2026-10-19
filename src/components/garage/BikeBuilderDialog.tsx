@@ -754,7 +754,7 @@ export function BikeBuilderDialog({
                 <div className="space-y-1">
                   <Label className="text-[11px] text-zinc-400">Manufacturer</Label>
                   <Combobox
-                    value={frontTire.manufacturer || "Maxxis"}
+                    value={frontTire.manufacturer || ""}
                     onChange={(val) =>
                       setFrontTire((prev) => ({ ...prev, manufacturer: val }))
                     }
@@ -767,7 +767,7 @@ export function BikeBuilderDialog({
                 <div className="space-y-1">
                   <Label className="text-[11px] text-zinc-400">Tire Model</Label>
                   <Combobox
-                    value={frontTire.model}
+                    value={frontTire.model || ""}
                     onChange={(val) =>
                       setFrontTire((prev) => ({ ...prev, model: val }))
                     }
@@ -801,7 +801,7 @@ export function BikeBuilderDialog({
                 <div className="space-y-1">
                   <Label className="text-[11px] text-zinc-400">Casing</Label>
                   <Combobox
-                    value={frontTire.casing || "standard"}
+                    value={frontTire.casing || ""}
                     onChange={(val) =>
                       setFrontTire((prev) => ({ ...prev, casing: val as any }))
                     }
@@ -911,7 +911,7 @@ export function BikeBuilderDialog({
                   </div>
                   <div className="text-[11px] text-zinc-300 font-medium">
                     <span className="text-white font-semibold">
-                      {frontTire.manufacturer || "Maxxis"} {frontTire.model || "Tire"}
+                      {[frontTire.manufacturer, frontTire.model].filter(Boolean).join(" ") || "Tire Setup"}
                     </span>
                     {" • "}
                     <span className="font-mono">{frontTire.width}</span>
@@ -948,7 +948,7 @@ export function BikeBuilderDialog({
                   <div className="space-y-1">
                     <Label className="text-[11px] text-zinc-400">Manufacturer</Label>
                     <Combobox
-                      value={rearTire.manufacturer || "Maxxis"}
+                      value={rearTire.manufacturer || ""}
                       onChange={(val) =>
                         setRearTire((prev) => ({ ...prev, manufacturer: val }))
                       }
@@ -961,7 +961,7 @@ export function BikeBuilderDialog({
                   <div className="space-y-1">
                     <Label className="text-[11px] text-zinc-400">Tire Model</Label>
                     <Combobox
-                      value={rearTire.model}
+                      value={rearTire.model || ""}
                       onChange={(val) =>
                         setRearTire((prev) => ({ ...prev, model: val }))
                       }
@@ -995,7 +995,7 @@ export function BikeBuilderDialog({
                   <div className="space-y-1">
                     <Label className="text-[11px] text-zinc-400">Casing</Label>
                     <Combobox
-                      value={rearTire.casing || "heavy"}
+                      value={rearTire.casing || ""}
                       onChange={(val) =>
                         setRearTire((prev) => ({ ...prev, casing: val as any }))
                       }

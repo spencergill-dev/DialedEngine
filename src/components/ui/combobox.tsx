@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useId } from "react";
+import { useState, useRef, useEffect, useId, useCallback } from "react";
 import { ChevronsUpDown, Check, Plus, X } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
@@ -27,34 +27,88 @@ export function Combobox({
   emptyLabel = "No matching hardware found",
 }: ComboboxProps) {
   const [isOpen, setIsOpen] = useState(false);
+  const [inputValue, setInputValue] = useState(value || "");
+  const [isTyping, setIsTyping] = useState(false);
   const [highlightedIndex, setHighlightedIndex] = useState<number>(-1);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
+  const isFocusedRef = useRef(false);
+  const lastCommittedValueRef = useRef(value || "");
+  const inputValueRef = useRef(inputValue);
+  inputValueRef.current = inputValue;
+
   const listId = useId();
 
-  // Filter options based on typed input
-  const query = value.trim().toLowerCase();
+  // Sync external value changes into local inputValue if not focused
+  useEffect(() => {
+    if (!isFocusedRef.current) {
+      setInputValue(value || "");
+      lastCommittedValueRef.current = value || "";
+      setIsTyping(false);
+    }
+  }, [value]);
+
+  // Compute filtered options:
+  // When not actively typing (or when input is empty), show all default options on focus/click.
+  // When typing, strictly filter by typed query.
+  const query = isTyping ? inputValue.trim().toLowerCase() : "";
   const filteredOptions = query
     ? options.filter((opt) => opt.toLowerCase().includes(query))
     : options;
 
   const isExactMatch = options.some(
-    (opt) => opt.toLowerCase() === value.trim().toLowerCase()
+    (opt) => opt.toLowerCase() === inputValue.trim().toLowerCase()
   );
-  const showCustomOption = query.length > 0 && !isExactMatch;
+  const showCustomOption = isTyping && inputValue.trim().length > 0 && !isExactMatch;
 
   // Total navigable items count: filtered options + 1 (if custom option displayed)
   const totalItems = filteredOptions.length + (showCustomOption ? 1 : 0);
 
-  // Close on outside click
+  // Commit value helper
+  const commitCurrentInput = useCallback(() => {
+    const currentText = inputValueRef.current;
+    const trimmed = currentText.trim();
+    if (!trimmed) {
+      if (lastCommittedValueRef.current !== "") {
+        lastCommittedValueRef.current = "";
+        onChange("");
+      }
+      setInputValue("");
+      return;
+    }
+
+    const exactMatch = options.find(
+      (opt) => opt.toLowerCase() === trimmed.toLowerCase()
+    );
+    const finalValue = exactMatch || trimmed;
+    if (lastCommittedValueRef.current !== finalValue) {
+      lastCommittedValueRef.current = finalValue;
+      onChange(finalValue);
+    }
+    setInputValue(finalValue);
+  }, [options, onChange]);
+
+  const handleSelectOption = (selectedVal: string) => {
+    lastCommittedValueRef.current = selectedVal;
+    setInputValue(selectedVal);
+    onChange(selectedVal);
+    setIsOpen(false);
+    setIsTyping(false);
+    setHighlightedIndex(-1);
+  };
+
+  // Close and commit on outside click
   useEffect(() => {
     function handleClickOutside(event: MouseEvent | TouchEvent) {
       if (
         containerRef.current &&
         !containerRef.current.contains(event.target as Node)
       ) {
+        commitCurrentInput();
         setIsOpen(false);
+        setIsTyping(false);
       }
     }
 
@@ -66,7 +120,25 @@ export function Combobox({
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("touchstart", handleClickOutside);
     };
-  }, [isOpen]);
+  }, [isOpen, commitCurrentInput]);
+
+  // Scroll to selected option when dropdown opens in default mode
+  useEffect(() => {
+    if (isOpen && !isTyping && listRef.current) {
+      const selectedIndex = options.findIndex(
+        (opt) => opt.toLowerCase() === (value || "").trim().toLowerCase()
+      );
+      if (selectedIndex >= 0) {
+        setHighlightedIndex(selectedIndex);
+        const activeElement = listRef.current.children[
+          selectedIndex
+        ] as HTMLElement;
+        if (activeElement) {
+          activeElement.scrollIntoView({ block: "nearest" });
+        }
+      }
+    }
+  }, [isOpen, isTyping, options, value]);
 
   // Keep highlighted index in view when navigating via arrow keys
   useEffect(() => {
@@ -80,13 +152,6 @@ export function Combobox({
     }
   }, [highlightedIndex]);
 
-  const handleSelectOption = (selectedVal: string) => {
-    onChange(selectedVal);
-    setIsOpen(false);
-    setHighlightedIndex(-1);
-    inputRef.current?.blur();
-  };
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (disabled) return;
 
@@ -94,6 +159,7 @@ export function Combobox({
       if (e.key === "ArrowDown" || e.key === "ArrowUp") {
         e.preventDefault();
         setIsOpen(true);
+        setIsTyping(false);
         setHighlightedIndex(0);
         return;
       }
@@ -111,21 +177,40 @@ export function Combobox({
       } else if (e.key === "Enter") {
         // Prevent form submission when picking from combobox
         e.preventDefault();
-        if (highlightedIndex >= 0) {
-          if (highlightedIndex < filteredOptions.length) {
-            handleSelectOption(filteredOptions[highlightedIndex]);
-          } else if (showCustomOption) {
-            handleSelectOption(value.trim());
-          }
+        if (highlightedIndex >= 0 && highlightedIndex < filteredOptions.length) {
+          handleSelectOption(filteredOptions[highlightedIndex]);
+        } else if (showCustomOption && highlightedIndex === filteredOptions.length) {
+          handleSelectOption(inputValue.trim());
         } else {
+          commitCurrentInput();
           setIsOpen(false);
+          setIsTyping(false);
+          setHighlightedIndex(-1);
         }
+        inputRef.current?.blur();
+      } else if (e.key === "Tab") {
+        commitCurrentInput();
+        setIsOpen(false);
+        setIsTyping(false);
       } else if (e.key === "Escape") {
         e.preventDefault();
         setIsOpen(false);
+        setIsTyping(false);
         setHighlightedIndex(-1);
+        setInputValue(lastCommittedValueRef.current);
       }
     }
+  };
+
+  const handleBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    isFocusedRef.current = false;
+    // Don't commit/close if focus shifted to inside the combobox container
+    if (containerRef.current?.contains(e.relatedTarget as Node)) {
+      return;
+    }
+    commitCurrentInput();
+    setIsOpen(false);
+    setIsTyping(false);
   };
 
   return (
@@ -136,20 +221,30 @@ export function Combobox({
           id={id}
           name={name}
           type="text"
-          value={value}
+          value={inputValue}
           disabled={disabled}
           placeholder={placeholder}
           autoComplete="off"
           spellCheck="false"
           onChange={(e) => {
-            onChange(e.target.value);
+            const nextVal = e.target.value;
+            setInputValue(nextVal);
+            setIsTyping(true);
             if (!isOpen) setIsOpen(true);
             setHighlightedIndex(0);
           }}
           onFocus={() => {
+            isFocusedRef.current = true;
             setIsOpen(true);
-            setHighlightedIndex(-1);
+            setIsTyping(false);
           }}
+          onClick={() => {
+            if (!isOpen) {
+              setIsOpen(true);
+              setIsTyping(false);
+            }
+          }}
+          onBlur={handleBlur}
           onKeyDown={handleKeyDown}
           className={cn(
             "flex h-9 w-full rounded-md bg-zinc-950 px-3 pr-8 py-1 font-sans text-base md:text-sm text-zinc-100 placeholder:text-zinc-500",
@@ -160,13 +255,18 @@ export function Combobox({
         />
 
         <div className="absolute right-1 flex items-center gap-0.5">
-          {value && !disabled && (
+          {inputValue && !disabled && (
             <button
               type="button"
               tabIndex={-1}
               onClick={(e) => {
                 e.preventDefault();
+                setInputValue("");
+                lastCommittedValueRef.current = "";
                 onChange("");
+                setIsTyping(false);
+                setIsOpen(true);
+                setHighlightedIndex(-1);
                 inputRef.current?.focus();
               }}
               className="p-1 text-zinc-500 hover:text-zinc-300 transition-colors rounded-sm"
@@ -182,10 +282,14 @@ export function Combobox({
             disabled={disabled}
             onClick={(e) => {
               e.preventDefault();
-              setIsOpen((prev) => !prev);
-              if (!isOpen) {
-                inputRef.current?.focus();
-              }
+              setIsOpen((prev) => {
+                const next = !prev;
+                if (next) {
+                  setIsTyping(false);
+                  inputRef.current?.focus();
+                }
+                return next;
+              });
             }}
             className="p-1 text-zinc-400 hover:text-zinc-200 transition-colors rounded-sm"
             aria-label="Toggle options"
@@ -218,7 +322,7 @@ export function Combobox({
 
               {filteredOptions.map((opt, idx) => {
                 const isSelected =
-                  opt.toLowerCase() === value.trim().toLowerCase();
+                  opt.toLowerCase() === (inputValue || value || "").trim().toLowerCase();
                 const isHighlighted = idx === highlightedIndex;
 
                 return (
@@ -254,7 +358,7 @@ export function Combobox({
                   aria-selected={false}
                   onMouseDown={(e) => {
                     e.preventDefault();
-                    handleSelectOption(value.trim());
+                    handleSelectOption(inputValue.trim());
                   }}
                   onMouseEnter={() =>
                     setHighlightedIndex(filteredOptions.length)
@@ -269,7 +373,7 @@ export function Combobox({
                   <div className="flex items-center gap-1.5 truncate">
                     <Plus className="w-3.5 h-3.5 text-lime-400 shrink-0" />
                     <span className="truncate">
-                      Use custom: <strong className="text-zinc-200">&quot;{value.trim()}&quot;</strong>
+                      Use custom: <strong className="text-zinc-200">&quot;{inputValue.trim()}&quot;</strong>
                     </span>
                   </div>
                 </li>
