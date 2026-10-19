@@ -7,7 +7,11 @@ import React, {
   useCallback,
 } from "react";
 import type { Session, User } from "@supabase/supabase-js";
-import { supabase, isSupabaseConfigured } from "@/lib/supabaseClient";
+import {
+  supabase,
+  isSupabaseConfigured,
+  getFastPathSession,
+} from "@/lib/supabaseClient";
 import { clearAllLocalUserData } from "@/lib/accountService";
 
 export interface AuthContextType {
@@ -24,50 +28,20 @@ export interface AuthContextType {
 }
 
 /**
- * Synchronously retrieves cached session from localStorage to enable instant
- * optimistic UI rendering on app reload before Supabase network validation.
+ * Backwards-compatible alias for getFastPathSession
  */
-export function getOptimisticSession(): Session | null {
-  if (typeof window === "undefined" || !window.localStorage) return null;
-
-  try {
-    for (let i = 0; i < localStorage.length; i++) {
-      const key = localStorage.key(i);
-      if (
-        key &&
-        ((key.startsWith("sb-") && key.endsWith("-auth-token")) ||
-          key === "supabase.auth.token")
-      ) {
-        const raw = localStorage.getItem(key);
-        if (!raw) continue;
-        const parsed = JSON.parse(raw);
-        const sessionData: any =
-          parsed?.access_token ? parsed : parsed?.session || parsed?.currentSession;
-
-        if (sessionData?.access_token && sessionData?.user?.id) {
-          const nowSec = Math.floor(Date.now() / 1000);
-          // If token has an expiration, ensure it hasn't expired (30s buffer)
-          if (!sessionData.expires_at || sessionData.expires_at > nowSec + 30) {
-            return sessionData as Session;
-          }
-        }
-      }
-    }
-  } catch (err) {
-    console.warn("[AuthContext] Failed parsing optimistic session from localStorage:", err);
-  }
-
-  return null;
-}
+export const getOptimisticSession = getFastPathSession;
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  // 1. Optimistic Synchronous State: Instant Frame 1 UI for returning users
-  const [session, setSession] = useState<Session | null>(() => getOptimisticSession());
+  // 1. Optimistic Initial State: Synchronous Fast-Path check directly reads localStorage/cookie
+  // Allows app UI to render instantly without waiting for async lock queue or network getSession()
+  const [session, setSession] = useState<Session | null>(() => getFastPathSession());
   const [isAuthLoading, setIsAuthLoading] = useState<boolean>(() => {
     if (!isSupabaseConfigured) return false;
-    return !getOptimisticSession();
+    // If fast-path session exists, optimistic render happens immediately on Frame 0
+    return !getFastPathSession();
   });
   const [isGuestMode, setIsGuestMode] = useState<boolean>(false);
 
@@ -79,28 +53,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
-    // 1. Single consolidated call to getSession at the highest level
-    supabase.auth
-      .getSession()
-      .then(({ data: { session: verifiedSession }, error }) => {
-        if (!isMounted) return;
-        if (error) {
-          console.warn("[AuthProvider] Session verification error:", error);
-        }
-        if (verifiedSession) {
-          setSession(verifiedSession);
-        } else {
-          // If no active session found on server, clear optimistic state
-          setSession(null);
-        }
-        setIsAuthLoading(false);
-      })
-      .catch((err) => {
-        console.warn("[AuthProvider] getSession exception:", err);
-        if (isMounted) setIsAuthLoading(false);
-      });
-
-    // 2. Sole global listener for auth state changes across the entire application
+    // 2. Background Validation & Refresh:
+    // Let supabase.auth.onAuthStateChange handle actual token validation and refresh
+    // in the background *after* the initial optimistic render.
+    // We intentionally DO NOT call `await supabase.auth.getSession()` on mount to prevent
+    // any navigator.locks queue stall on mobile Safari.
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, newSession) => {
@@ -112,8 +69,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     });
 
+    // Fast-path safety fallback: If onAuthStateChange hasn't emitted within 100ms
+    // (e.g. for brand new unauthenticated users or offline mode), release loading state.
+    const fallbackTimer = setTimeout(() => {
+      if (isMounted) {
+        setIsAuthLoading(false);
+      }
+    }, 100);
+
     return () => {
       isMounted = false;
+      clearTimeout(fallbackTimer);
       subscription.unsubscribe();
     };
   }, []);
