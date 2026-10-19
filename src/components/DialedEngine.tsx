@@ -5,6 +5,7 @@ import { ProfileView } from "./profile/ProfileView";
 import { GarageView } from "./garage/GarageView";
 import { RideSetupView } from "./setup/RideSetupView";
 import { LoginView } from "./auth/LoginView";
+import { OnboardingView } from "./onboarding/OnboardingView";
 import { Toaster } from "@/components/ui/sonner";
 import { useCyclingState } from "@/hooks/useCyclingState";
 import { supabase, isSupabaseConfigured } from "@/lib/supabaseClient";
@@ -65,6 +66,9 @@ export function DialedEngine() {
     addBike,
     updateBike,
     deleteBike,
+    hasCompletedOnboarding,
+    completeOnboarding,
+    isSyncing,
   } = useCyclingState(userId);
 
   const handleSignOut = async () => {
@@ -78,10 +82,10 @@ export function DialedEngine() {
     setMainView("garage");
   };
 
-  // 1. Initial Auth Check Loading State
-  if (isAuthLoading) {
+  // 1. Initial Auth Check or Cloud Profile Verification Loading State
+  if (isAuthLoading || (session && isSyncing && !hasCompletedOnboarding)) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-[#111111] text-zinc-100 p-6">
+      <div className="flex-1 flex flex-col items-center justify-center bg-[#111111] text-zinc-100 p-6 min-h-screen">
         <div className="flex flex-col items-center gap-3">
           <img
             src="/logo.png"
@@ -115,7 +119,23 @@ export function DialedEngine() {
     );
   }
 
-  // 3. Authenticated Application OS (Defaulting to Garage upon login)
+  // 3. New Rider Onboarding Flow: Profile baseline setup before entering garage
+  if (session && !isGuestMode && !hasCompletedOnboarding) {
+    return (
+      <div className="flex-1 flex flex-col min-h-0 bg-[#111111]">
+        <OnboardingView
+          initialDisplayName={profile.displayName}
+          onComplete={async (profileData) => {
+            await completeOnboarding(profileData);
+            setMainView("garage");
+          }}
+        />
+        <Toaster position="bottom-right" richColors />
+      </div>
+    );
+  }
+
+  // 4. Authenticated Application OS (Defaulting to Garage upon login)
   return (
     <div className="bg-transparent text-zinc-100 font-sans selection:bg-lime-500/25 selection:text-lime-300 flex-1 flex flex-col min-h-0 relative z-10 overflow-hidden">
       {/* Fixed Sibling Header */}
@@ -138,6 +158,7 @@ export function DialedEngine() {
             profile={profile}
             onSwitchToGarage={() => setMainView("garage")}
             onUpdateBike={updateBike}
+            onAddBike={addBike}
           />
         )}
 

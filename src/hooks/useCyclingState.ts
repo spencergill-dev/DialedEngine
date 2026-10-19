@@ -5,6 +5,7 @@ import type {
   BikeDiscipline,
   SuspensionLayout,
   WheelSize,
+  RidingStyle,
 } from "@/types/cycling";
 import { dataService, DEFAULT_PROFILE, DEFAULT_BIKES, STORAGE_KEYS } from "@/services";
 import { supabase, isSupabaseConfigured } from "@/lib/supabaseClient";
@@ -74,11 +75,25 @@ function mapDbRowToBike(row: any): Bike {
  * useCyclingState Hook
  * 
  * Manages reactive application state for rider metrics, bike fleet, and active setup.
- * Supports transparent synchronization with Supabase user_bikes and profiles tables.
+ * Strictly isolates cloud user data by authenticated profile_id with zero mock fallback.
  */
 export function useCyclingState(userId?: string | null) {
-  // Synchronous initial hydrate from localStorage to prevent any render flickers
+  // Synchronous initial hydrate from scoped localStorage
   const [profile, setProfile] = useState<RiderProfile>(() => {
+    if (userId) {
+      try {
+        const saved = localStorage.getItem(`dialed_profile_${userId}`);
+        if (saved) return JSON.parse(saved);
+      } catch {}
+      return {
+        displayName: "",
+        weight: 165,
+        heightInches: 71,
+        height: "5' 11\" (180 cm)",
+        ridingStyle: "neutral",
+      };
+    }
+    // Guest fallback
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.PROFILE);
       if (saved) {
@@ -96,6 +111,18 @@ export function useCyclingState(userId?: string | null) {
   });
 
   const [bikes, setBikes] = useState<Bike[]>(() => {
+    if (userId) {
+      try {
+        const saved = localStorage.getItem(`dialed_bikes_${userId}`);
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          if (Array.isArray(parsed)) return parsed;
+        }
+      } catch {}
+      // Authenticated users start with empty fleet until verified from DB - NEVER default mock bikes!
+      return [];
+    }
+    // Guest fallback
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.BIKES);
       return saved ? JSON.parse(saved) : DEFAULT_BIKES;
@@ -105,6 +132,13 @@ export function useCyclingState(userId?: string | null) {
   });
 
   const [activeBikeId, setActiveBikeId] = useState<string>(() => {
+    if (userId) {
+      try {
+        return localStorage.getItem(`dialed_active_bike_${userId}`) || "";
+      } catch {
+        return "";
+      }
+    }
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.ACTIVE_BIKE);
       if (saved && bikes.some((b) => b.id === saved)) return saved;
@@ -114,56 +148,98 @@ export function useCyclingState(userId?: string | null) {
     }
   });
 
-  // Re-sync with local DataService on mount
-  useEffect(() => {
-    let isMounted = true;
-
-    async function syncDataLayer() {
-      try {
-        const [loadedProfile, loadedBikes, loadedActiveId] = await Promise.all([
-          dataService.getProfile(),
-          dataService.getBikes(),
-          dataService.getActiveBikeId(),
-        ]);
-
-        if (isMounted) {
-          if (loadedProfile) setProfile(loadedProfile);
-          if (loadedBikes && loadedBikes.length > 0) setBikes(loadedBikes);
-          if (loadedActiveId) setActiveBikeId(loadedActiveId);
-        }
-      } catch (err) {
-        console.warn("[useCyclingState] DataService sync note:", err);
-      }
+  const [hasCompletedOnboarding, setHasCompletedOnboarding] = useState<boolean>(() => {
+    if (!userId) return true; // Guests bypass onboarding
+    try {
+      return localStorage.getItem(`dialed_onboarded_${userId}`) === "true";
+    } catch {
+      return false;
     }
+  });
 
-    syncDataLayer();
+  const [isSyncing, setIsSyncing] = useState<boolean>(Boolean(userId));
 
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  // Sync with Supabase cloud database when authenticated user is present
+  // Handle session transitions & cloud synchronization strictly isolated per user
   useEffect(() => {
-    if (!isSupabaseConfigured || !userId) return;
     let isCancelled = false;
 
-    async function syncCloudFleet() {
+    if (!userId) {
+      // Guest mode
+      setIsSyncing(false);
+      setHasCompletedOnboarding(true);
       try {
-        // Ensure profile row exists in profiles table
-        await supabase
-          .from("profiles")
-          .upsert(
-            {
-              id: userId!,
-              first_name: profile.displayName || "Rider",
-              weight_lbs: profile.weight || 175,
-            },
-            { onConflict: "id" }
-          );
+        const savedBikes = localStorage.getItem(STORAGE_KEYS.BIKES);
+        const guestBikes = savedBikes ? JSON.parse(savedBikes) : DEFAULT_BIKES;
+        setBikes(guestBikes);
+        setActiveBikeId(guestBikes[0]?.id || "");
+      } catch {
+        setBikes(DEFAULT_BIKES);
+        setActiveBikeId(DEFAULT_BIKES[0]?.id || "");
+      }
+      return;
+    }
 
-        // Fetch cloud bikes for this user
-        const { data: cloudBikes, error } = await supabase
+    if (!isSupabaseConfigured) {
+      setIsSyncing(false);
+      return;
+    }
+
+    // Authenticated session: query Supabase as source of truth
+    setIsSyncing(true);
+
+    async function syncUserData() {
+      try {
+        // 1. Fetch Profile
+        const { data: profileRow, error: profileErr } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", userId!)
+          .maybeSingle();
+
+        if (isCancelled) return;
+
+        if (profileErr) {
+          console.warn("[useCyclingState] Profile query warning:", profileErr);
+        }
+
+        if (profileRow && profileRow.weight_lbs) {
+          const riderName = profileRow.first_name || "Rider";
+          const riderWeight = Number(profileRow.weight_lbs);
+          const riderHeightInches = profileRow.height_inches || 71;
+          const riderStyle = profileRow.riding_style || "neutral";
+          const ft = Math.floor(riderHeightInches / 12);
+          const inches = riderHeightInches % 12;
+
+          const loadedProfile: RiderProfile = {
+            displayName: riderName,
+            weight: riderWeight,
+            heightInches: riderHeightInches,
+            height: `${ft}' ${inches}" (${Math.round(riderHeightInches * 2.54)} cm)`,
+            ridingStyle: riderStyle,
+          };
+          setProfile(loadedProfile);
+          setHasCompletedOnboarding(true);
+          try {
+            localStorage.setItem(`dialed_profile_${userId}`, JSON.stringify(loadedProfile));
+            localStorage.setItem(`dialed_onboarded_${userId}`, "true");
+          } catch {}
+        } else {
+          // Check if auth user has metadata from sign-up
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user?.user_metadata?.first_name) {
+              setProfile((prev) => ({
+                ...prev,
+                displayName: user.user_metadata.first_name,
+              }));
+            }
+          } catch {}
+          // Brand new user with no saved weight requires onboarding
+          setHasCompletedOnboarding(false);
+        }
+
+        // 2. Fetch User Bikes strictly by profile_id = userId
+        const { data: cloudBikes, error: bikesErr } = await supabase
           .from("user_bikes")
           .select("*")
           .eq("profile_id", userId!)
@@ -171,24 +247,40 @@ export function useCyclingState(userId?: string | null) {
 
         if (isCancelled) return;
 
-        if (error) {
-          console.warn("[useCyclingState] Error querying user_bikes:", error);
-          return;
+        if (bikesErr) {
+          console.error("[useCyclingState] Error fetching user_bikes:", bikesErr);
         }
 
-        if (cloudBikes && cloudBikes.length > 0) {
-          const mapped = cloudBikes.map(mapDbRowToBike);
-          setBikes(mapped);
+        // Strictly set bikes to whatever the database returned (could be empty array)
+        // NEVER fall back to DEFAULT_BIKES or mock arrays for authenticated accounts!
+        const mapped = (cloudBikes || []).map(mapDbRowToBike);
+        setBikes(mapped);
+
+        if (mapped.length > 0) {
           setActiveBikeId((prev) =>
             mapped.some((b) => b.id === prev) ? prev : mapped[0].id
           );
+        } else {
+          setActiveBikeId("");
         }
+
+        try {
+          localStorage.setItem(`dialed_bikes_${userId}`, JSON.stringify(mapped));
+          localStorage.setItem(
+            `dialed_active_bike_${userId}`,
+            mapped[0]?.id || ""
+          );
+        } catch {}
       } catch (err) {
-        console.warn("[useCyclingState] Cloud fleet sync exception:", err);
+        console.error("[useCyclingState] Cloud fleet sync exception:", err);
+      } finally {
+        if (!isCancelled) {
+          setIsSyncing(false);
+        }
       }
     }
 
-    syncCloudFleet();
+    syncUserData();
 
     return () => {
       isCancelled = true;
@@ -222,26 +314,80 @@ export function useCyclingState(userId?: string | null) {
           .then(({ error }: { error: any }) => {
             if (error) console.error("[useCyclingState] Error syncing profile:", error);
           });
+
+        try {
+          localStorage.setItem(`dialed_profile_${userId}`, JSON.stringify(updated));
+        } catch {}
+      } else {
+        dataService.saveProfile(updated).catch(console.error);
       }
 
-      // Delegate persistence to abstracted dataService
-      dataService.saveProfile(updated).catch(console.error);
       return updated;
     });
   };
 
+  const completeOnboarding = async (profileData: {
+    displayName: string;
+    weight: number;
+    ridingStyle: RidingStyle;
+    heightInches?: number;
+  }) => {
+    const heightInches = profileData.heightInches || 71;
+    const ft = Math.floor(heightInches / 12);
+    const inches = heightInches % 12;
+    const cm = Math.round(heightInches * 2.54);
+
+    const updatedProfile: RiderProfile = {
+      displayName: profileData.displayName,
+      weight: profileData.weight,
+      heightInches,
+      height: `${ft}' ${inches}" (${cm} cm)`,
+      ridingStyle: profileData.ridingStyle,
+    };
+
+    setProfile(updatedProfile);
+    setHasCompletedOnboarding(true);
+
+    if (userId && isSupabaseConfigured) {
+      try {
+        await supabase.from("profiles").upsert(
+          {
+            id: userId,
+            first_name: profileData.displayName,
+            weight_lbs: profileData.weight,
+          },
+          { onConflict: "id" }
+        );
+
+        // Also update auth user metadata for convenience
+        await supabase.auth.updateUser({
+          data: {
+            first_name: profileData.displayName,
+            weight_lbs: profileData.weight,
+            riding_style: profileData.ridingStyle,
+            height_inches: heightInches,
+          },
+        });
+
+        localStorage.setItem(`dialed_profile_${userId}`, JSON.stringify(updatedProfile));
+        localStorage.setItem(`dialed_onboarded_${userId}`, "true");
+      } catch (e) {
+        console.error("[useCyclingState] Failed to persist profile during onboarding:", e);
+      }
+    }
+  };
+
   const addBike = async (newBike: Omit<Bike, "id">) => {
     let assignedId = `bike-${Date.now()}`;
+    const brandStr =
+      newBike.brand === "Custom"
+        ? newBike.customBrand || "Custom"
+        : newBike.brand;
+    const customName = `${brandStr} ${newBike.model}`.trim();
 
     // Insert record into Supabase user_bikes linked to user ID
     if (userId && isSupabaseConfigured) {
       try {
-        const brandStr =
-          newBike.brand === "Custom"
-            ? newBike.customBrand || "Custom"
-            : newBike.brand;
-        const customName = `${brandStr} ${newBike.model}`.trim();
-
         // Guarantee profile row exists before insert to satisfy foreign key
         await supabase
           .from("profiles")
@@ -249,7 +395,7 @@ export function useCyclingState(userId?: string | null) {
             {
               id: userId,
               first_name: profile.displayName || "Rider",
-              weight_lbs: profile.weight || 175,
+              weight_lbs: profile.weight || 165,
             },
             { onConflict: "id" }
           );
@@ -275,26 +421,54 @@ export function useCyclingState(userId?: string | null) {
           toast.error(`Database error: ${error.message}`);
         } else if (data?.id) {
           assignedId = data.id;
-          toast.success("Bike saved to cloud fleet!", {
-            description: `${customName} linked to your Supabase account.`,
+          toast.success("Bike added to your garage!", {
+            description: `${customName} linked to your Supabase fleet.`,
           });
         }
       } catch (err: any) {
         console.error("[useCyclingState] Cloud insert exception:", err);
       }
+    } else {
+      toast.success("Bike added to your garage!", {
+        description: `${customName} is ready to calibrate.`,
+      });
     }
 
     const bikeWithId: Bike = { ...newBike, id: assignedId };
-    setBikes((prev) => [bikeWithId, ...prev]);
+    setBikes((prev) => {
+      const next = [bikeWithId, ...prev];
+      if (userId) {
+        try {
+          localStorage.setItem(`dialed_bikes_${userId}`, JSON.stringify(next));
+        } catch {}
+      }
+      return next;
+    });
     setActiveBikeId(assignedId);
-    dataService.addBike(bikeWithId).catch(console.error);
+
+    if (userId) {
+      try {
+        localStorage.setItem(`dialed_active_bike_${userId}`, assignedId);
+      } catch {}
+    } else {
+      dataService.addBike(bikeWithId).catch(console.error);
+    }
+
     return bikeWithId;
   };
 
   const updateBike = async (id: string, updated: Partial<Bike>) => {
-    setBikes((prev) =>
-      prev.map((bike) => (bike.id === id ? { ...bike, ...updated } : bike))
-    );
+    setBikes((prev) => {
+      const next = prev.map((bike) =>
+        bike.id === id ? { ...bike, ...updated } : bike
+      );
+      if (userId) {
+        try {
+          localStorage.setItem(`dialed_bikes_${userId}`, JSON.stringify(next));
+        } catch {}
+      }
+      return next;
+    });
 
     if (userId && isSupabaseConfigured) {
       try {
@@ -327,9 +501,9 @@ export function useCyclingState(userId?: string | null) {
       } catch (err) {
         console.error("[useCyclingState] Error updating user_bikes:", err);
       }
+    } else {
+      dataService.updateBike(id, updated).catch(console.error);
     }
-
-    dataService.updateBike(id, updated).catch(console.error);
   };
 
   const deleteBike = async (id: string) => {
@@ -338,7 +512,18 @@ export function useCyclingState(userId?: string | null) {
       if (activeBikeId === id) {
         const nextId = filtered[0]?.id || "";
         setActiveBikeId(nextId);
-        dataService.setActiveBikeId(nextId).catch(console.error);
+        if (userId) {
+          try {
+            localStorage.setItem(`dialed_active_bike_${userId}`, nextId);
+          } catch {}
+        } else {
+          dataService.setActiveBikeId(nextId).catch(console.error);
+        }
+      }
+      if (userId) {
+        try {
+          localStorage.setItem(`dialed_bikes_${userId}`, JSON.stringify(filtered));
+        } catch {}
       }
       return filtered;
     });
@@ -353,14 +538,20 @@ export function useCyclingState(userId?: string | null) {
       } catch (err) {
         console.error("[useCyclingState] Error deleting from user_bikes:", err);
       }
+    } else {
+      dataService.deleteBike(id).catch(console.error);
     }
-
-    dataService.deleteBike(id).catch(console.error);
   };
 
   const handleSetActiveBikeId = (id: string) => {
     setActiveBikeId(id);
-    dataService.setActiveBikeId(id).catch(console.error);
+    if (userId) {
+      try {
+        localStorage.setItem(`dialed_active_bike_${userId}`, id);
+      } catch {}
+    } else {
+      dataService.setActiveBikeId(id).catch(console.error);
+    }
   };
 
   return {
@@ -373,5 +564,8 @@ export function useCyclingState(userId?: string | null) {
     addBike,
     updateBike,
     deleteBike,
+    hasCompletedOnboarding,
+    completeOnboarding,
+    isSyncing,
   };
 }

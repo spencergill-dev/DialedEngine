@@ -14,10 +14,13 @@ import {
   ChevronDown,
   Loader2,
   Pencil,
+  Gauge,
+  Plus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { AnimatedNumber } from "@/components/common/AnimatedNumber";
 import { useDialedMath } from "@/hooks/useDialedMath";
 import { CalculationBreakdownDialog } from "./CalculationBreakdownDialog";
@@ -50,6 +53,7 @@ interface RideSetupViewProps {
   profile: RiderProfile;
   onSwitchToGarage: () => void;
   onUpdateBike?: (id: string, updates: Partial<Bike>) => void;
+  onAddBike?: (bikeData: Omit<Bike, "id">) => void;
 }
 
 const RIDING_STYLES: {
@@ -70,6 +74,7 @@ export function RideSetupView({
   profile,
   onSwitchToGarage,
   onUpdateBike,
+  onAddBike,
 }: RideSetupViewProps) {
   const currentBike = bikes.find((b) => b.id === activeBikeId) || bikes[0];
 
@@ -98,6 +103,7 @@ export function RideSetupView({
   const [isBreakdownOpen, setIsBreakdownOpen] = useState(false);
   const [breakdownTab, setBreakdownTab] = useState<"front" | "rear">("front");
   const [isEditBikeOpen, setIsEditBikeOpen] = useState(false);
+  const [isCreateBikeOpen, setIsCreateBikeOpen] = useState(false);
 
   // Live Conditions & Forecasting State
   const [selectedLocation, setSelectedLocation] = useState<string>(() => {
@@ -340,17 +346,81 @@ export function RideSetupView({
 
   if (!currentBike) {
     return (
-      <div className="py-16 text-center space-y-4 max-w-md mx-auto">
-        <h3 className="text-xl font-bold text-white font-sans">No Bike Selected</h3>
-        <p className="text-sm text-zinc-400">
-          Add a bicycle to your hardware fleet to calibrate tailored tire pressures and suspension dynamics.
-        </p>
-        <button
-          onClick={onSwitchToGarage}
-          className="px-6 py-2.5 bg-white text-black hover:bg-zinc-200 text-xs font-bold rounded-xl shadow-lg transition-colors"
+      <div className="py-8 sm:py-16 space-y-8 max-w-xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="relative overflow-hidden rounded-3xl bg-zinc-950/70 border border-zinc-800/80 p-8 sm:p-12 text-center shadow-2xl"
         >
-          Open Garage
-        </button>
+          {/* Subtle Top Lime Gradient Accent */}
+          <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-lime-400/40 to-transparent" />
+
+          {/* Central Icon Container */}
+          <div className="relative mx-auto w-16 h-16 rounded-2xl bg-zinc-900 border border-zinc-800 flex items-center justify-center mb-5 shadow-[0_0_30px_rgba(163,230,53,0.12)]">
+            <Gauge className="w-8 h-8 text-lime-400" />
+            <span className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-zinc-950 border border-zinc-800 flex items-center justify-center">
+              <Plus className="w-3 h-3 text-lime-400" />
+            </span>
+          </div>
+
+          <h2 className="text-xl sm:text-2xl font-black text-white font-sans tracking-tight mb-2">
+            NO ACTIVE BIKE CONFIGURED
+          </h2>
+          <p className="text-xs sm:text-sm text-zinc-400 max-w-md mx-auto leading-relaxed mb-6">
+            Live pressure telemetry and suspension tuning require an active bike in your garage with tire casing and geometry specifications.
+          </p>
+
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+            <Button
+              onClick={() => {
+                if (onAddBike) {
+                  setIsCreateBikeOpen(true);
+                } else {
+                  onSwitchToGarage();
+                }
+              }}
+              className="w-full sm:w-auto h-11 px-6 bg-lime-400 hover:bg-lime-300 text-black font-extrabold text-xs sm:text-sm rounded-xl inline-flex items-center justify-center gap-2 shadow-[0_0_24px_rgba(163,230,53,0.25)] transition-all border-none cursor-pointer"
+            >
+              <Plus className="w-4 h-4 stroke-[2.5]" />
+              <span>Add Bike to Garage</span>
+            </Button>
+            <Button
+              variant="outline"
+              onClick={onSwitchToGarage}
+              className="w-full sm:w-auto h-11 px-5 border-zinc-800 bg-zinc-900/80 hover:bg-zinc-800 text-zinc-300 hover:text-white font-bold text-xs sm:text-sm rounded-xl transition-all cursor-pointer"
+            >
+              Open Garage
+            </Button>
+          </div>
+
+          {/* Telemetry Feature Teasers */}
+          <div className="mt-8 pt-6 border-t border-zinc-800/50 grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
+            <div className="p-3 rounded-xl bg-zinc-900/40 border border-zinc-800/40">
+              <p className="text-[11px] font-bold text-zinc-200 uppercase tracking-wider">Dual Telemetry</p>
+              <p className="text-[10px] text-zinc-500 mt-0.5">Separate front & rear PSI tailored to weight transfer.</p>
+            </div>
+            <div className="p-3 rounded-xl bg-zinc-900/40 border border-zinc-800/40">
+              <p className="text-[11px] font-bold text-zinc-200 uppercase tracking-wider">Weather Tracking</p>
+              <p className="text-[10px] text-zinc-500 mt-0.5">Live ambient temperature & precipitation compensation.</p>
+            </div>
+            <div className="p-3 rounded-xl bg-zinc-900/40 border border-zinc-800/40">
+              <p className="text-[11px] font-bold text-zinc-200 uppercase tracking-wider">Suspension Sag</p>
+              <p className="text-[10px] text-zinc-500 mt-0.5">Air spring PSI & rebound damping click targets.</p>
+            </div>
+          </div>
+        </motion.div>
+
+        {isCreateBikeOpen && (
+          <BikeBuilderDialog
+            open={isCreateBikeOpen}
+            onOpenChange={setIsCreateBikeOpen}
+            bikeToEdit={null}
+            onSave={(newBike) => {
+              onAddBike?.(newBike);
+              setIsCreateBikeOpen(false);
+            }}
+          />
+        )}
       </div>
     );
   }
