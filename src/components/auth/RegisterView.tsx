@@ -19,7 +19,9 @@ export function RegisterView({
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
@@ -212,7 +214,7 @@ export function RegisterView({
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3.5 text-zinc-500 hover:text-zinc-300 transition-colors"
+                className="absolute right-3 top-3.5 text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
                 tabIndex={-1}
               >
                 {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
@@ -224,10 +226,45 @@ export function RegisterView({
             </div>
           </div>
 
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="reg-confirm-password" className="text-xs font-semibold text-zinc-300">
+                Confirm Password
+              </Label>
+              {password.length > 0 && confirmPassword.length > 0 && password === confirmPassword && (
+                <span className="text-[10px] font-bold text-lime-400 font-mono">MATCH</span>
+              )}
+              {confirmPassword.length > 0 && password !== confirmPassword && (
+                <span className="text-[10px] font-medium text-amber-400 font-mono">MISMATCH</span>
+              )}
+            </div>
+            <div className="relative">
+              <Lock className="w-4 h-4 text-zinc-500 absolute left-3 top-3.5" />
+              <Input
+                id="reg-confirm-password"
+                type={showConfirmPassword ? "text" : "password"}
+                autoComplete="new-password"
+                placeholder="Re-enter your password"
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                disabled={isLoading}
+                className="h-11 pl-9 pr-10 bg-zinc-900 border-none ring-1 ring-white/10 focus-visible:ring-lime-400 text-base md:text-sm placeholder:text-zinc-600 rounded-xl font-mono"
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-3.5 text-zinc-500 hover:text-zinc-300 transition-colors cursor-pointer"
+                tabIndex={-1}
+              >
+                {showConfirmPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+              </button>
+            </div>
+          </div>
+
           <Button
             type="submit"
-            disabled={isLoading}
-            className="w-full h-11 bg-white text-black hover:bg-zinc-200 font-bold rounded-xl text-xs shadow-lg transition-all border-none flex items-center justify-center gap-2 mt-2"
+            disabled={isLoading || !name.trim() || !email.trim() || password.length < 8 || password !== confirmPassword}
+            className="w-full h-11 bg-white text-black hover:bg-zinc-200 font-bold rounded-xl text-xs shadow-lg transition-all border-none flex items-center justify-center gap-2 mt-2 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
             {isLoading ? (
               <span>Creating Account...</span>
