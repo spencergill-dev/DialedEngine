@@ -1,5 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "@/db/schema";
+export type { Database } from "@/db/schema";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || "";
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || "";
@@ -22,7 +22,7 @@ const resolvedAnonKey = isSupabaseConfigured
   ? supabaseAnonKey
   : "placeholder-anon-key";
 
-export const supabase: SupabaseClient<Database> = createClient<Database>(
+export const supabase: SupabaseClient<any, "public", any> = createClient(
   resolvedUrl,
   resolvedAnonKey
 );

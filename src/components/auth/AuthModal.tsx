@@ -1,8 +1,6 @@
-import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { LoginView } from "./LoginView";
-import { RegisterView } from "./RegisterView";
-import { toast } from "sonner";
+import { supabase } from "@/lib/supabaseClient";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -17,36 +15,30 @@ export function AuthModal({
   initialMode = "login",
   onAuthSuccess,
 }: AuthModalProps) {
-  const [mode, setMode] = useState<"login" | "register">(initialMode);
-
-  const handleSuccess = (user: { email: string; name?: string }) => {
-    toast.success(`Welcome to Dialed Cloud, ${user.name || "Rider"}!`, {
-      description: "Cloud database sync ready for V2.",
-    });
-    if (onAuthSuccess) onAuthSuccess(user);
-    onClose();
-  };
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md p-0 overflow-hidden bg-[#111111] border border-zinc-800 rounded-3xl shadow-2xl">
         <DialogTitle className="sr-only">
-          {mode === "login" ? "Sign In to Dialed" : "Create Dialed Account"}
+          {initialMode === "login" ? "Sign In to Dialed" : "Create Dialed Account"}
         </DialogTitle>
         <div className="p-6 sm:p-8">
-          {mode === "login" ? (
-            <LoginView
-              onSuccess={handleSuccess}
-              onSwitchToRegister={() => setMode("register")}
-              onContinueAsGuest={onClose}
-            />
-          ) : (
-            <RegisterView
-              onSuccess={handleSuccess}
-              onSwitchToLogin={() => setMode("login")}
-              onContinueAsGuest={onClose}
-            />
-          )}
+          <LoginView
+            onSuccess={() => {
+              if (onAuthSuccess) {
+                supabase.auth.getUser().then(({ data: { user } }) => {
+                  if (user) {
+                    onAuthSuccess({
+                      email: user.email || "",
+                      name: user.user_metadata?.first_name || user.email?.split("@")[0],
+                    });
+                  }
+                });
+              }
+              onClose();
+            }}
+            initialMode={initialMode === "login" ? "signin" : "signup"}
+            onContinueAsGuest={onClose}
+          />
         </div>
       </DialogContent>
     </Dialog>

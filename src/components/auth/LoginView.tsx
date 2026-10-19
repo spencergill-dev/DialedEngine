@@ -1,244 +1,339 @@
 import { useState } from "react";
-import { Mail, Lock, ArrowRight, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, ArrowRight, Eye, EyeOff, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
+import { supabase, isSupabaseConfigured } from "@/lib/supabaseClient";
+import { toast } from "sonner";
 
 interface LoginViewProps {
-  onSuccess?: (user: { email: string; name?: string }) => void;
-  onSwitchToRegister: () => void;
+  onSuccess?: () => void;
   onContinueAsGuest?: () => void;
+  initialMode?: "signin" | "signup";
 }
 
 export function LoginView({
   onSuccess,
-  onSwitchToRegister,
   onContinueAsGuest,
+  initialMode = "signin",
 }: LoginViewProps) {
+  const [mode, setMode] = useState<"signin" | "signup">(initialMode);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
-    if (!email || !password) {
+    const cleanEmail = email.trim();
+    if (!cleanEmail || !password) {
       setErrorMessage("Please enter both email and password.");
+      return;
+    }
+
+    if (mode === "signup" && password.length < 6) {
+      setErrorMessage("Password must be at least 6 characters.");
+      return;
+    }
+
+    if (!isSupabaseConfigured) {
+      toast.warning("Supabase credentials not configured in .env.local", {
+        description: "Continuing in local mode.",
+      });
+      onSuccess?.();
       return;
     }
 
     setIsLoading(true);
 
-    // Simulate authenticating against Supabase Auth
-    setTimeout(() => {
-      setIsLoading(false);
-      if (onSuccess) {
-        onSuccess({ email, name: email.split("@")[0] });
-      }
-    }, 700);
-  };
-
-  const handleOAuth = (provider: "google" | "apple") => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-      if (onSuccess) {
-        onSuccess({
-          email: `cyclist@${provider}.com`,
-          name: provider === "apple" ? "Apple Rider" : "Google Rider",
+    try {
+      if (mode === "signin") {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: cleanEmail,
+          password,
         });
+
+        if (error) {
+          setErrorMessage(error.message);
+          toast.error(error.message);
+          return;
+        }
+
+        const riderName =
+          data.user?.user_metadata?.first_name ||
+          data.user?.user_metadata?.name ||
+          cleanEmail.split("@")[0] ||
+          "Rider";
+
+        toast.success(`Welcome back, ${riderName}!`, {
+          description: "Syncing fleet and setup calibrations...",
+        });
+
+        onSuccess?.();
+      } else {
+        // Sign Up
+        const { data, error } = await supabase.auth.signUp({
+          email: cleanEmail,
+          password,
+          options: {
+            data: {
+              first_name: name.trim() || undefined,
+            },
+          },
+        });
+
+        if (error) {
+          setErrorMessage(error.message);
+          toast.error(error.message);
+          return;
+        }
+
+        if (data.session) {
+          toast.success("Account created successfully!", {
+            description: "Opening your garage...",
+          });
+          onSuccess?.();
+        } else {
+          toast.info("Account registration initiated!", {
+            description: "Please check your email to verify your account, or sign in.",
+          });
+          setMode("signin");
+        }
       }
-    }, 600);
+    } catch (err: any) {
+      console.error("[LoginView] Auth error:", err);
+      const msg = err?.message || "An unexpected error occurred during authentication.";
+      setErrorMessage(msg);
+      toast.error(msg);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-[#111111] text-zinc-100 flex flex-col justify-center items-center px-4 py-12 font-sans selection:bg-lime-500/25 selection:text-lime-300">
+    <div className="min-h-screen bg-[#111111] text-zinc-100 flex flex-col justify-center items-center px-4 py-8 sm:py-12 font-sans selection:bg-lime-500/25 selection:text-lime-300 relative overflow-hidden">
+      {/* Ambient Radial Atmospheric Glow */}
+      <div
+        aria-hidden="true"
+        className="pointer-events-none absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] sm:w-[750px] h-[300px] sm:h-[400px] rounded-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-lime-400/[0.07] via-emerald-500/[0.02] to-transparent blur-[90px] -z-0"
+      />
+
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: "easeOut" }}
-        className="w-full max-w-sm space-y-6"
+        className="w-full max-w-sm space-y-6 relative z-10"
       >
         {/* Brand Header */}
-        <div className="text-center space-y-2">
-          <div className="flex justify-center mb-3">
+        <div className="text-center space-y-2.5">
+          <div className="flex justify-center mb-2">
             <img
               src="/logo.png"
               alt="Dialed Engine"
-              className="h-10 w-auto object-contain rounded-xl shadow-lg"
+              className="h-11 w-auto object-contain rounded-xl shadow-lg ring-1 ring-white/10"
             />
           </div>
-          <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-zinc-900 border border-zinc-800 text-[10px] font-sans font-semibold tracking-wider text-zinc-400 uppercase">
-            <span className="w-1.5 h-1.5 rounded-full bg-lime-400" />
-            DIALED CLOUD OS
+
+          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-900/90 border border-zinc-800 text-[10px] font-sans font-semibold tracking-wider text-zinc-300 uppercase shadow-inner">
+            <span className="w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_8px_#a3e635]" />
+            DIALED SETUP OS
           </div>
+
           <h1 className="text-2xl font-black tracking-tight text-white font-sans">
-            Welcome back
+            {mode === "signin" ? "Sign in to your Garage" : "Create your Setup OS"}
           </h1>
-          <p className="text-xs text-zinc-400">
-            Sign in to sync your bike fleet, telemetry, and pressure logs
+
+          <p className="text-xs text-zinc-400 max-w-xs mx-auto leading-relaxed">
+            {mode === "signin"
+              ? "Access your telemetry baselines, fleet hardware, and deterministic tire pressure calibrations."
+              : "Calibrate tire pressures, suspension dynamics, and sync your bicycle fleet across devices."}
           </p>
         </div>
 
-        {/* Social Authentication */}
-        <div className="space-y-2.5">
-          <Button
+        {/* Mode Segmented Switcher */}
+        <div className="grid grid-cols-2 p-1 bg-zinc-900/90 rounded-xl border border-zinc-800/80 text-xs font-semibold">
+          <button
             type="button"
-            variant="outline"
-            onClick={() => handleOAuth("google")}
-            disabled={isLoading}
-            className="w-full h-11 bg-zinc-900 hover:bg-zinc-850 text-zinc-200 hover:text-white border border-zinc-800/80 rounded-xl text-xs font-semibold flex items-center justify-center gap-2.5 transition-colors"
+            onClick={() => {
+              setMode("signin");
+              setErrorMessage(null);
+            }}
+            className={`py-2 rounded-lg transition-all ${
+              mode === "signin"
+                ? "bg-zinc-800 text-white shadow-sm"
+                : "text-zinc-400 hover:text-zinc-200"
+            }`}
           >
-            <svg className="w-4 h-4" viewBox="0 0 24 24">
-              <path
-                fill="#4285F4"
-                d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-              />
-              <path
-                fill="#34A853"
-                d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-              />
-              <path
-                fill="#FBBC05"
-                d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-              />
-              <path
-                fill="#EA4335"
-                d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-              />
-            </svg>
-            <span>Continue with Google</span>
-          </Button>
-
-          <Button
+            Sign In
+          </button>
+          <button
             type="button"
-            variant="outline"
-            onClick={() => handleOAuth("apple")}
-            disabled={isLoading}
-            className="w-full h-11 bg-zinc-900 hover:bg-zinc-850 text-zinc-200 hover:text-white border border-zinc-800/80 rounded-xl text-xs font-semibold flex items-center justify-center gap-2.5 transition-colors"
+            onClick={() => {
+              setMode("signup");
+              setErrorMessage(null);
+            }}
+            className={`py-2 rounded-lg transition-all ${
+              mode === "signup"
+                ? "bg-zinc-800 text-white shadow-sm"
+                : "text-zinc-400 hover:text-zinc-200"
+            }`}
           >
-            <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-              <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.63-.77 1.06-1.85.94-2.93-.93.04-2.07.62-2.73 1.39-.58.67-1.09 1.76-.95 2.81 1.04.08 2.11-.53 2.74-1.27z" />
-            </svg>
-            <span>Continue with Apple</span>
-          </Button>
+            Create Account
+          </button>
         </div>
 
-        {/* Divider */}
-        <div className="relative flex items-center justify-center">
-          <div className="border-t border-zinc-800/80 w-full" />
-          <span className="bg-[#111111] px-3 text-[11px] text-zinc-500 font-sans uppercase tracking-wider">
-            or continue with email
-          </span>
-        </div>
-
-        {/* Credentials Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
-          {errorMessage && (
-            <div className="p-3 rounded-xl bg-red-950/40 border border-red-900/50 text-red-300 text-xs font-sans">
-              {errorMessage}
-            </div>
-          )}
-
-          <div className="space-y-1.5">
-            <Label htmlFor="login-email" className="text-xs font-semibold text-zinc-300">
-              Email Address
-            </Label>
-            <div className="relative">
-              <Mail className="w-4 h-4 text-zinc-500 absolute left-3 top-3.5" />
-              <Input
-                id="login-email"
-                type="email"
-                autoComplete="email"
-                placeholder="rider@dialedengine.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-                className="h-11 pl-9 bg-zinc-900 border-none ring-1 ring-white/10 focus-visible:ring-lime-400 text-base md:text-sm placeholder:text-zinc-600 rounded-xl"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between">
-              <Label htmlFor="login-password" className="text-xs font-semibold text-zinc-300">
-                Password
-              </Label>
-              <button
-                type="button"
-                className="text-[11px] text-zinc-400 hover:text-white transition-colors"
-                onClick={() => alert("Password reset workflow will be enabled with Supabase Auth.")}
+        {/* Form Card */}
+        <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/80 backdrop-blur-md shadow-xl">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {errorMessage && (
+              <motion.div
+                initial={{ opacity: 0, y: -6 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-3 rounded-xl bg-red-950/60 border border-red-900/70 text-red-200 text-xs font-sans leading-relaxed"
               >
-                Forgot password?
-              </button>
-            </div>
-            <div className="relative">
-              <Lock className="w-4 h-4 text-zinc-500 absolute left-3 top-3.5" />
-              <Input
-                id="login-password"
-                type={showPassword ? "text" : "password"}
-                autoComplete="current-password"
-                placeholder="••••••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-                className="h-11 pl-9 pr-10 bg-zinc-900 border-none ring-1 ring-white/10 focus-visible:ring-lime-400 text-base md:text-sm placeholder:text-zinc-600 rounded-xl font-mono"
-              />
-              <button
-                type="button"
-                onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-3 top-3.5 text-zinc-500 hover:text-zinc-300 transition-colors"
-                tabIndex={-1}
-              >
-                {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-              </button>
-            </div>
-          </div>
-
-          <Button
-            type="submit"
-            disabled={isLoading}
-            className="w-full h-11 bg-white text-black hover:bg-zinc-200 font-bold rounded-xl text-xs shadow-lg transition-all border-none flex items-center justify-center gap-2 mt-2"
-          >
-            {isLoading ? (
-              <span>Authenticating...</span>
-            ) : (
-              <>
-                <span>Sign In to Dialed</span>
-                <ArrowRight className="w-4 h-4" />
-              </>
+                {errorMessage}
+              </motion.div>
             )}
-          </Button>
-        </form>
 
-        {/* Footer Navigation */}
-        <div className="space-y-3 pt-2 text-center">
-          <p className="text-xs text-zinc-400">
-            Don&apos;t have an account?{" "}
-            <button
-              type="button"
-              onClick={onSwitchToRegister}
-              className="text-white hover:text-lime-400 font-semibold underline underline-offset-4 transition-colors"
+            <AnimatePresence mode="popLayout">
+              {mode === "signup" && (
+                <motion.div
+                  key="name-field"
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: "auto" }}
+                  exit={{ opacity: 0, height: 0 }}
+                  transition={{ duration: 0.2 }}
+                  className="space-y-1.5"
+                >
+                  <Label htmlFor="auth-name" className="text-xs font-semibold text-zinc-300">
+                    Rider Name or Handle
+                  </Label>
+                  <div className="relative">
+                    <User className="w-4 h-4 text-zinc-500 absolute left-3 top-3.5" />
+                    <Input
+                      id="auth-name"
+                      type="text"
+                      autoComplete="name"
+                      placeholder="e.g. Spencer"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      disabled={isLoading}
+                      className="h-11 pl-9 bg-zinc-950/80 border-none ring-1 ring-white/10 focus-visible:ring-lime-400 text-base md:text-sm placeholder:text-zinc-600 rounded-xl"
+                    />
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="auth-email" className="text-xs font-semibold text-zinc-300">
+                Email Address
+              </Label>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-zinc-500 absolute left-3 top-3.5" />
+                <Input
+                  id="auth-email"
+                  type="email"
+                  autoComplete="email"
+                  required
+                  placeholder="rider@dialedengine.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
+                  className="h-11 pl-9 bg-zinc-950/80 border-none ring-1 ring-white/10 focus-visible:ring-lime-400 text-base md:text-sm placeholder:text-zinc-600 rounded-xl"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="auth-password" className="text-xs font-semibold text-zinc-300">
+                  Password
+                </Label>
+                {mode === "signin" && (
+                  <button
+                    type="button"
+                    className="text-[11px] text-zinc-400 hover:text-white transition-colors"
+                    onClick={() => {
+                      if (!email.trim()) {
+                        toast.info("Please enter your email address first.");
+                        return;
+                      }
+                      supabase.auth.resetPasswordForEmail(email.trim()).then(({ error }) => {
+                        if (error) toast.error(error.message);
+                        else toast.success("Password reset email sent!");
+                      });
+                    }}
+                  >
+                    Forgot password?
+                  </button>
+                )}
+              </div>
+              <div className="relative">
+                <Lock className="w-4 h-4 text-zinc-500 absolute left-3 top-3.5" />
+                <Input
+                  id="auth-password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                  required
+                  placeholder="••••••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                  className="h-11 pl-9 pr-10 bg-zinc-950/80 border-none ring-1 ring-white/10 focus-visible:ring-lime-400 text-base md:text-sm placeholder:text-zinc-600 rounded-xl font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-3.5 text-zinc-500 hover:text-zinc-300 transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="w-full h-11 bg-white text-black hover:bg-zinc-200 font-bold rounded-xl text-xs shadow-lg transition-all border-none flex items-center justify-center gap-2 mt-4 cursor-pointer"
             >
-              Create account
-            </button>
-          </p>
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-zinc-800" />
+                  <span>{mode === "signin" ? "Authenticating..." : "Creating Account..."}</span>
+                </>
+              ) : (
+                <>
+                  <span>{mode === "signin" ? "Sign In to Garage" : "Create Account & Enter"}</span>
+                  <ArrowRight className="w-4 h-4" />
+                </>
+              )}
+            </Button>
+          </form>
+        </div>
 
-          {onContinueAsGuest && (
+        {/* Guest / Offline Mode Fallback */}
+        {onContinueAsGuest && (
+          <div className="text-center pt-1">
             <button
               type="button"
               onClick={onContinueAsGuest}
-              className="text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors block w-full pt-1"
+              className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors inline-flex items-center gap-1.5"
             >
-              Continue in Local / Offline Mode →
+              <span>Continue in local preview mode</span>
+              <span>→</span>
             </button>
-          )}
-        </div>
+          </div>
+        )}
       </motion.div>
     </div>
   );
 }
+
+export default LoginView;

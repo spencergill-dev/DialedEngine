@@ -9,6 +9,7 @@ import {
   Camera,
   ArrowLeft,
   Cloud,
+  LogOut,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -19,21 +20,37 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "@/components/ui/sonner";
 import { AuthModal } from "@/components/auth/AuthModal";
+import { supabase } from "@/lib/supabaseClient";
 import type { RiderProfile, RidingStyle } from "@/types/cycling";
 
 interface ProfileViewProps {
   profile: RiderProfile;
   onUpdateProfile: (partial: Partial<RiderProfile>) => void;
   onBackToSetup: () => void;
+  onSignOut?: () => void;
 }
 
 export function ProfileView({
   profile,
   onUpdateProfile,
   onBackToSetup,
+  onSignOut,
 }: ProfileViewProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (user?.email) setUserEmail(user.email);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUserEmail(session?.user?.email || null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Form draft state
   const [displayName, setDisplayName] = useState(profile.displayName || "Spencer");
@@ -274,7 +291,7 @@ export function ProfileView({
               </div>
             </div>
 
-            {/* Cloud Sync & Auth Scaffolding Banner (V2) */}
+            {/* Cloud Sync & Auth Banner */}
             <div className="p-5 rounded-2xl bg-zinc-900/40 border border-zinc-800/40 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
@@ -282,21 +299,48 @@ export function ProfileView({
                   <span className="text-[11px] font-sans font-bold uppercase tracking-wider text-zinc-300">
                     DIALED CLOUD SYNC
                   </span>
-                  <span className="text-[9px] font-sans font-semibold tracking-wider px-1.5 py-0.5 rounded bg-zinc-800 text-lime-400 uppercase">
-                    V2 PREVIEW
+                  <span className={`text-[9px] font-sans font-semibold tracking-wider px-1.5 py-0.5 rounded uppercase ${
+                    userEmail ? "bg-lime-400/10 text-lime-400 border border-lime-400/20" : "bg-zinc-800 text-zinc-400"
+                  }`}>
+                    {userEmail ? "CONNECTED" : "V2 PREVIEW"}
                   </span>
                 </div>
                 <p className="text-xs text-zinc-400">
-                  Authenticate with Supabase to back up your fleet and sync setups across all your devices.
+                  {userEmail ? (
+                    <>
+                      Authenticated as <span className="text-zinc-200 font-medium">{userEmail}</span>. Your bikes and setups are synced to Supabase.
+                    </>
+                  ) : (
+                    "Authenticate with Supabase to back up your fleet and sync setups across all your devices."
+                  )}
                 </p>
               </div>
-              <Button
-                type="button"
-                onClick={() => setIsAuthOpen(true)}
-                className="h-9 px-4 bg-white text-black hover:bg-zinc-200 font-bold text-xs rounded-xl border-none shrink-0 shadow-sm"
-              >
-                Sign In / Register
-              </Button>
+              {userEmail ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={async () => {
+                    if (onSignOut) {
+                      onSignOut();
+                    } else {
+                      await supabase.auth.signOut();
+                    }
+                    toast.success("Signed out successfully");
+                  }}
+                  className="h-9 px-4 border-zinc-800 bg-zinc-900 hover:bg-zinc-800 text-zinc-300 hover:text-white font-bold text-xs rounded-xl shrink-0 gap-1.5"
+                >
+                  <LogOut className="w-3.5 h-3.5 text-zinc-400" />
+                  Sign Out
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  onClick={() => setIsAuthOpen(true)}
+                  className="h-9 px-4 bg-white text-black hover:bg-zinc-200 font-bold text-xs rounded-xl border-none shrink-0 shadow-sm"
+                >
+                  Sign In / Register
+                </Button>
+              )}
             </div>
           </motion.div>
         ) : (

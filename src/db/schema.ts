@@ -308,6 +308,73 @@ export interface Database {
           [key: string]: any;
         };
       };
+      profiles: {
+        Row: {
+          id: string;
+          first_name?: string | null;
+          weight_lbs?: number | null;
+          created_at?: string;
+          [key: string]: any;
+        };
+        Insert: {
+          id: string;
+          first_name?: string | null;
+          weight_lbs?: number | null;
+          created_at?: string;
+          [key: string]: any;
+        };
+        Update: {
+          id?: string;
+          first_name?: string | null;
+          weight_lbs?: number | null;
+          created_at?: string;
+          [key: string]: any;
+        };
+      };
+      user_bikes: {
+        Row: {
+          id: string;
+          profile_id: string | null;
+          custom_name: string | null;
+          brand: string | null;
+          model: string | null;
+          discipline: string | null;
+          suspension_layout: string | null;
+          wheel_size: string | null;
+          front_tire_width: string | null;
+          rear_tire_width: string | null;
+          created_at: string;
+          [key: string]: any;
+        };
+        Insert: {
+          id?: string;
+          profile_id?: string | null;
+          custom_name?: string | null;
+          brand?: string | null;
+          model?: string | null;
+          discipline?: string | null;
+          suspension_layout?: string | null;
+          wheel_size?: string | null;
+          front_tire_width?: string | null;
+          rear_tire_width?: string | null;
+          created_at?: string;
+          [key: string]: any;
+        };
+        Update: {
+          id?: string;
+          profile_id?: string | null;
+          custom_name?: string | null;
+          brand?: string | null;
+          model?: string | null;
+          discipline?: string | null;
+          suspension_layout?: string | null;
+          wheel_size?: string | null;
+          front_tire_width?: string | null;
+          rear_tire_width?: string | null;
+          created_at?: string;
+          [key: string]: any;
+        };
+      };
     };
     Views: {
       [_ in never]: never;
