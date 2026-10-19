@@ -20,11 +20,13 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { toast } from "@/components/ui/sonner";
 import { AuthModal } from "@/components/auth/AuthModal";
+import { ProfileSkeleton } from "./ProfileSkeleton";
 import { supabase } from "@/lib/supabaseClient";
 import type { RiderProfile, RidingStyle } from "@/types/cycling";
 
 interface ProfileViewProps {
   profile: RiderProfile;
+  isLoading?: boolean;
   onUpdateProfile: (partial: Partial<RiderProfile>) => void;
   onBackToSetup: () => void;
   onSignOut?: () => void;
@@ -32,6 +34,7 @@ interface ProfileViewProps {
 
 export function ProfileView({
   profile,
+  isLoading = false,
   onUpdateProfile,
   onBackToSetup,
   onSignOut,
@@ -119,6 +122,10 @@ export function ProfileView({
     .join("")
     .slice(0, 2)
     .toUpperCase() || "R";
+
+  if (isLoading) {
+    return <ProfileSkeleton />;
+  }
 
   return (
     <div className="space-y-8 pb-12 max-w-4xl mx-auto">

@@ -7,10 +7,10 @@ import { RideSetupView } from "./setup/RideSetupView";
 import { LoginView } from "./auth/LoginView";
 import { OnboardingView } from "./onboarding/OnboardingView";
 import { Toaster } from "@/components/ui/sonner";
+import { GlobalAppLoader } from "./common/GlobalAppLoader";
 import { useCyclingState } from "@/hooks/useCyclingState";
 import { supabase, isSupabaseConfigured } from "@/lib/supabaseClient";
 import type { Session } from "@supabase/supabase-js";
-import { Loader2 } from "lucide-react";
 
 export function DialedEngine() {
   const [session, setSession] = useState<Session | null>(null);
@@ -85,19 +85,14 @@ export function DialedEngine() {
   // 1. Initial Auth Check or Cloud Profile Verification Loading State
   if (isAuthLoading || (session && isSyncing && !hasCompletedOnboarding)) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-[#111111] text-zinc-100 p-6 min-h-[100dvh]">
-        <div className="flex flex-col items-center gap-3">
-          <img
-            src="/logo.png"
-            alt="Dialed"
-            className="h-10 w-auto object-contain rounded-xl opacity-90 animate-pulse"
-          />
-          <div className="flex items-center gap-2 text-xs font-semibold text-zinc-400">
-            <Loader2 className="w-4 h-4 text-lime-400 animate-spin" />
-            <span>SYNCING SETUP OS...</span>
-          </div>
-        </div>
-      </div>
+      <GlobalAppLoader
+        status={isAuthLoading ? "INITIALIZING SETUP OS" : "SYNCING RIDER PROFILE"}
+        substatus={
+          isAuthLoading
+            ? "Verifying authentication state & telemetry services..."
+            : "Retrieving baseline metrics and suspension calibrations..."
+        }
+      />
     );
   }
 
@@ -167,6 +162,7 @@ export function DialedEngine() {
             profile={profile}
             bikes={bikes}
             activeBikeId={activeBikeId}
+            isLoading={isSyncing}
             onSelectActiveBike={setActiveBikeId}
             onAddBike={addBike}
             onUpdateBike={updateBike}
@@ -178,6 +174,7 @@ export function DialedEngine() {
         {mainView === "profile" && (
           <ProfileView
             profile={profile}
+            isLoading={isSyncing}
             onUpdateProfile={updateProfile}
             onBackToSetup={() => setMainView("setup")}
             onSignOut={handleSignOut}

@@ -5,13 +5,15 @@ import { Button } from "@/components/ui/button";
 import { BikeBuilderDialog } from "./BikeBuilderDialog";
 import { DeleteBikeDialog } from "./DeleteBikeDialog";
 import { BikeDetailDialog } from "./BikeDetailDialog";
-import { toast } from "@/components/ui/sonner";
+import { GarageSkeleton } from "./GarageSkeleton";
+import { toast } from "sonner";
 import type { Bike, RiderProfile } from "@/types/cycling";
 
 interface GarageViewProps {
   profile: RiderProfile;
   bikes: Bike[];
   activeBikeId: string;
+  isLoading?: boolean;
   onSelectActiveBike: (id: string) => void;
   onAddBike: (bikeData: Omit<Bike, "id">) => void;
   onUpdateBike: (id: string, bikeData: Partial<Bike>) => void;
@@ -23,6 +25,7 @@ export function GarageView({
   profile,
   bikes,
   activeBikeId,
+  isLoading = false,
   onSelectActiveBike,
   onAddBike,
   onUpdateBike,
@@ -100,6 +103,10 @@ export function GarageView({
   const ownerName = profile.displayName?.trim();
   const garageTitle = ownerName ? `${ownerName}'s Garage` : "Your Garage";
   const activeDetailBike = bikes.find((b) => b.id === selectedBikeId) || null;
+
+  if (isLoading) {
+    return <GarageSkeleton />;
+  }
 
   return (
     <div className="space-y-8 pb-12">
