@@ -22,7 +22,7 @@ export type BikeCategory =
 
 export type WheelSize = "29\"" | "27.5\"" | "700c" | "650b" | "26\"";
 
-export type TireCasing = "light" | "standard" | "heavy";
+export type TireCasing = "light" | "standard" | "heavy" | (string & {});
 
 export interface TireSetup {
   wheelSize: WheelSize;

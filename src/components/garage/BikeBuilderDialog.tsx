@@ -1,5 +1,5 @@
 import { useState, useEffect, type FormEvent } from "react";
-import { Camera } from "lucide-react";
+import { Camera, CheckCircle2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,7 @@ import {
   DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -26,9 +27,57 @@ import type {
   BikeDiscipline,
   SuspensionLayout,
   WheelSize,
-  TireCasing,
   TireSetup,
 } from "@/types/cycling";
+
+export const TIRE_MANUFACTURERS: string[] = [
+  "Maxxis",
+  "Schwalbe",
+  "Continental",
+  "Specialized",
+  "Michelin",
+  "Vittoria",
+  "Pirelli",
+  "Bontrager",
+  "WTB",
+  "Goodyear",
+  "Panaracer",
+  "Teravail",
+  "Kenda",
+];
+
+export const TIRE_CASINGS: string[] = [
+  "EXO",
+  "EXO+",
+  "DoubleDown (DD)",
+  "Downhill (DH)",
+  "Super Trail",
+  "Super Gravity",
+  "Super Downhill",
+  "Enduro",
+  "Grid Trail",
+  "Grid Gravity",
+  "Standard (Single-Ply)",
+  "Light (XC / Race)",
+];
+
+export const TIRE_COMPOUNDS: string[] = [
+  "MaxxGrip (3C)",
+  "MaxxTerra (3C)",
+  "MaxxSpeed (3C)",
+  "Dual Compound",
+  "Addix Ultra Soft",
+  "Addix Soft",
+  "Addix Speedgrip",
+  "BlackChili",
+  "GripTon T9",
+  "GripTon T7",
+  "GripTon T5",
+  "Magi-X",
+  "Gum-X",
+  "Graphene 2.0 4C",
+  "Standard Compound",
+];
 
 interface BikeBuilderDialogProps {
   open: boolean;
@@ -108,6 +157,7 @@ const DEFAULT_FRONT_TIRE: TireSetup = {
   model: "Assegai",
   width: "2.5\" WT",
   casing: "standard",
+  compound: "MaxxGrip (3C)",
   hasInsert: false,
   isTubeless: true,
 };
@@ -118,6 +168,7 @@ const DEFAULT_REAR_TIRE: TireSetup = {
   model: "Minion DHR II",
   width: "2.4\" WT",
   casing: "heavy",
+  compound: "MaxxTerra (3C)",
   hasInsert: true,
   isTubeless: true,
 };
@@ -149,9 +200,12 @@ export function BikeBuilderDialog({
   const [forkModel, setForkModel] = useState("Fox 38 Factory Grip2");
   const [forkTravel, setForkTravel] = useState(170);
   const [shockModel, setShockModel] = useState("Fox Float X2 Factory");
+  const [rearShockStroke, setRearShockStroke] = useState<number | string>("");
+  const [rearWheelTravel, setRearWheelTravel] = useState<number | string>("");
 
   const [frontTire, setFrontTire] = useState<TireSetup>(DEFAULT_FRONT_TIRE);
   const [rearTire, setRearTire] = useState<TireSetup>(DEFAULT_REAR_TIRE);
+  const [sameAsFront, setSameAsFront] = useState(false);
 
   const brandKey = brand.trim().toLowerCase();
   const brandSpecificModels = modelsByBrand[brandKey];
@@ -191,8 +245,19 @@ export function BikeBuilderDialog({
       setForkModel(bikeToEdit.forkModel);
       setForkTravel(bikeToEdit.forkTravel);
       setShockModel(bikeToEdit.shockModel);
+      setRearShockStroke(bikeToEdit.rearShockStroke != null ? bikeToEdit.rearShockStroke : "");
+      setRearWheelTravel(bikeToEdit.rearWheelTravel != null ? bikeToEdit.rearWheelTravel : "");
       setFrontTire(bikeToEdit.frontTire);
       setRearTire(bikeToEdit.rearTire);
+
+      // Detect if rear tire is currently configured identically to front tire
+      const isMirrored =
+        bikeToEdit.frontTire?.manufacturer === bikeToEdit.rearTire?.manufacturer &&
+        bikeToEdit.frontTire?.model === bikeToEdit.rearTire?.model &&
+        bikeToEdit.frontTire?.width === bikeToEdit.rearTire?.width &&
+        bikeToEdit.frontTire?.casing === bikeToEdit.rearTire?.casing &&
+        (bikeToEdit.frontTire?.compound || "") === (bikeToEdit.rearTire?.compound || "");
+      setSameAsFront(isMirrored);
     } else {
       setBrand("Santa Cruz");
       setCustomBrand("");
@@ -205,10 +270,48 @@ export function BikeBuilderDialog({
       setForkModel("Fox 38 Factory Grip2");
       setForkTravel(170);
       setShockModel("Fox Float X2 Factory");
+      setRearShockStroke(60);
+      setRearWheelTravel(160);
       setFrontTire(DEFAULT_FRONT_TIRE);
       setRearTire(DEFAULT_REAR_TIRE);
+      setSameAsFront(false);
     }
   }, [bikeToEdit, open]);
+
+  // Keep rear tire synchronized in real time when sameAsFront is active
+  useEffect(() => {
+    if (sameAsFront) {
+      setRearTire((prev) => ({
+        ...prev,
+        manufacturer: frontTire.manufacturer,
+        model: frontTire.model,
+        width: frontTire.width,
+        casing: frontTire.casing,
+        compound: frontTire.compound,
+      }));
+    }
+  }, [
+    sameAsFront,
+    frontTire.manufacturer,
+    frontTire.model,
+    frontTire.width,
+    frontTire.casing,
+    frontTire.compound,
+  ]);
+
+  const handleToggleSameAsFront = (checked: boolean) => {
+    setSameAsFront(checked);
+    if (checked) {
+      setRearTire((prev) => ({
+        ...prev,
+        manufacturer: frontTire.manufacturer,
+        model: frontTire.model,
+        width: frontTire.width,
+        casing: frontTire.casing,
+        compound: frontTire.compound,
+      }));
+    }
+  };
 
   // Adjust defaults when discipline switches
   const handleDisciplineChange = (newDisc: BikeDiscipline) => {
@@ -351,11 +454,30 @@ export function BikeBuilderDialog({
     const resolvedFrontWidth =
       frontTire.width ||
       (frontTire.wheelSize === "700c" || frontTire.wheelSize === "650b" ? "40mm" : "2.4\"");
-    const resolvedRearWidth =
-      rearTire.width ||
-      (rearTire.wheelSize === "700c" || rearTire.wheelSize === "650b" ? "40mm" : "2.4\"");
+    const resolvedRearWidth = sameAsFront
+      ? resolvedFrontWidth
+      : (rearTire.width ||
+        (rearTire.wheelSize === "700c" || rearTire.wheelSize === "650b" ? "40mm" : "2.4\""));
 
     const resolvedBrand = brand === "Custom" && customBrand ? customBrand.trim() : brand.trim() || "Custom";
+
+    const resolvedFrontManufacturer = frontTire.manufacturer || "Maxxis";
+    const resolvedFrontModel = frontTire.model || "Assegai";
+    const resolvedFrontCasing = frontTire.casing || "standard";
+    const resolvedFrontCompound = frontTire.compound || null;
+
+    const resolvedRearManufacturer = sameAsFront
+      ? resolvedFrontManufacturer
+      : (rearTire.manufacturer || "Maxxis");
+    const resolvedRearModel = sameAsFront
+      ? resolvedFrontModel
+      : (rearTire.model || "Minion DHR II");
+    const resolvedRearCasing = sameAsFront
+      ? resolvedFrontCasing
+      : (rearTire.casing || "heavy");
+    const resolvedRearCompound = sameAsFront
+      ? resolvedFrontCompound
+      : (rearTire.compound || null);
 
     onSave({
       brand: resolvedBrand,
@@ -375,13 +497,23 @@ export function BikeBuilderDialog({
       forkModel: suspensionLayout === "rigid" ? "Rigid Fork" : forkModel.trim() || "Fork",
       forkTravel: suspensionLayout === "rigid" ? 0 : Number(forkTravel) || 0,
       shockModel: suspensionLayout === "full_suspension" ? shockModel.trim() : "Rigid Frame",
+      rearShockStroke: hasRearShock && rearShockStroke !== "" ? Number(rearShockStroke) : null,
+      rearWheelTravel: hasRearShock && rearWheelTravel !== "" ? Number(rearWheelTravel) : null,
       frontTire: {
         ...frontTire,
+        manufacturer: resolvedFrontManufacturer,
+        model: resolvedFrontModel,
         width: resolvedFrontWidth,
+        casing: resolvedFrontCasing,
+        compound: resolvedFrontCompound,
       },
       rearTire: {
         ...rearTire,
+        manufacturer: resolvedRearManufacturer,
+        model: resolvedRearModel,
         width: resolvedRearWidth,
+        casing: resolvedRearCasing,
+        compound: resolvedRearCompound,
       },
     });
     onOpenChange(false);
@@ -582,10 +714,10 @@ export function BikeBuilderDialog({
             </div>
           </div>
 
-          {/* 2. Wheels & Tires (Independent Front & Rear) */}
+          {/* 2. Wheels & Tires (Front & Rear Specifications) */}
           <div className="space-y-4 pt-3 border-t border-white/5">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">
-              2. Wheels & Tires (Independent Front / Rear)
+              2. Wheels & Tires
             </h4>
 
             {/* Front Tire Setup */}
@@ -599,7 +731,7 @@ export function BikeBuilderDialog({
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
                 <div className="space-y-1">
                   <Label className="text-[11px] text-zinc-400">Wheel Size</Label>
                   <Select
@@ -620,6 +752,19 @@ export function BikeBuilderDialog({
                 </div>
 
                 <div className="space-y-1">
+                  <Label className="text-[11px] text-zinc-400">Manufacturer</Label>
+                  <Combobox
+                    value={frontTire.manufacturer || "Maxxis"}
+                    onChange={(val) =>
+                      setFrontTire((prev) => ({ ...prev, manufacturer: val }))
+                    }
+                    options={TIRE_MANUFACTURERS}
+                    placeholder="e.g. Maxxis"
+                    className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
+                  />
+                </div>
+
+                <div className="space-y-1">
                   <Label className="text-[11px] text-zinc-400">Tire Model</Label>
                   <Combobox
                     value={frontTire.model}
@@ -633,7 +778,7 @@ export function BikeBuilderDialog({
                 </div>
 
                 <div className="space-y-1">
-                  <Label className="text-[11px] text-zinc-400">Tire Width</Label>
+                  <Label className="text-[11px] text-zinc-400">Width</Label>
                   <Select
                     value={frontTire.width}
                     onValueChange={(val) =>
@@ -655,27 +800,28 @@ export function BikeBuilderDialog({
 
                 <div className="space-y-1">
                   <Label className="text-[11px] text-zinc-400">Casing</Label>
-                  <Select
-                    value={frontTire.casing}
-                    onValueChange={(val: TireCasing) =>
-                      setFrontTire((prev) => ({ ...prev, casing: val }))
+                  <Combobox
+                    value={frontTire.casing || "standard"}
+                    onChange={(val) =>
+                      setFrontTire((prev) => ({ ...prev, casing: val as any }))
                     }
-                  >
-                    <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
-                      <SelectItem value="light" className="text-base md:text-sm">
-                        Light (Trail/Road)
-                      </SelectItem>
-                      <SelectItem value="standard" className="text-base md:text-sm">
-                        Standard (Enduro/All-Rd)
-                      </SelectItem>
-                      <SelectItem value="heavy" className="text-base md:text-sm">
-                        Heavy / DH (DoubleDown)
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                    options={TIRE_CASINGS}
+                    placeholder="e.g. EXO, DoubleDown"
+                    className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
+                  />
+                </div>
+
+                <div className="space-y-1">
+                  <Label className="text-[11px] text-zinc-400">Compound</Label>
+                  <Combobox
+                    value={frontTire.compound || ""}
+                    onChange={(val) =>
+                      setFrontTire((prev) => ({ ...prev, compound: val }))
+                    }
+                    options={TIRE_COMPOUNDS}
+                    placeholder="e.g. MaxxGrip, MaxxTerra"
+                    className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
+                  />
                 </div>
               </div>
 
@@ -723,6 +869,28 @@ export function BikeBuilderDialog({
               </div>
             </div>
 
+            {/* Same as Front Toggle Switch */}
+            <div className="flex items-center justify-between p-3.5 rounded-xl bg-zinc-950/80 ring-1 ring-white/10">
+              <div className="space-y-0.5 pr-2">
+                <Label htmlFor="same-as-front-toggle" className="text-xs font-semibold text-zinc-200 cursor-pointer flex items-center gap-2">
+                  <span>Same as Front</span>
+                  {sameAsFront && (
+                    <span className="text-[10px] font-bold text-lime-400 font-mono px-1.5 py-0.5 rounded-md bg-lime-400/10 border border-lime-400/30">
+                      MIRRORED
+                    </span>
+                  )}
+                </Label>
+                <p className="text-[11px] text-zinc-400">
+                  Automatically mirror front tire manufacturer, model, casing, compound, and width.
+                </p>
+              </div>
+              <Switch
+                id="same-as-front-toggle"
+                checked={sameAsFront}
+                onCheckedChange={handleToggleSameAsFront}
+              />
+            </div>
+
             {/* Rear Tire Setup */}
             <div className="p-4 rounded-xl bg-zinc-900/40 space-y-3">
               <div className="flex items-center justify-between">
@@ -734,85 +902,147 @@ export function BikeBuilderDialog({
                 </span>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                <div className="space-y-1">
-                  <Label className="text-[11px] text-zinc-400">Wheel Size</Label>
-                  <Select
-                    value={rearTire.wheelSize}
-                    onValueChange={handleRearWheelSizeChange}
-                  >
-                    <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
-                      {WHEEL_SIZES.map((w) => (
-                        <SelectItem key={w} value={w} className="text-base md:text-sm">
-                          {w}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+              {/* Mirrored Status Banner if active */}
+              {sameAsFront ? (
+                <div className="p-3.5 rounded-xl bg-lime-950/20 border border-lime-500/30 text-xs space-y-1.5">
+                  <div className="flex items-center gap-1.5 font-bold text-lime-400 text-[11px] uppercase tracking-wider">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Rear Tire Specifications Locked to Front</span>
+                  </div>
+                  <div className="text-[11px] text-zinc-300 font-medium">
+                    <span className="text-white font-semibold">
+                      {frontTire.manufacturer || "Maxxis"} {frontTire.model || "Tire"}
+                    </span>
+                    {" • "}
+                    <span className="font-mono">{frontTire.width}</span>
+                    {" • "}
+                    <span>{frontTire.casing}</span>
+                    {frontTire.compound ? ` • ${frontTire.compound}` : ""}
+                  </div>
+                  <p className="text-[10px] text-zinc-500">
+                    Rear wheel diameter, tubeless seal, and rim insert can still be configured independently below.
+                  </p>
                 </div>
+              ) : (
+                /* Independent Rear Tire Inputs */
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  <div className="space-y-1">
+                    <Label className="text-[11px] text-zinc-400">Wheel Size</Label>
+                    <Select
+                      value={rearTire.wheelSize}
+                      onValueChange={handleRearWheelSizeChange}
+                    >
+                      <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
+                        {WHEEL_SIZES.map((w) => (
+                          <SelectItem key={w} value={w} className="text-base md:text-sm">
+                            {w}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
 
-                <div className="space-y-1">
-                  <Label className="text-[11px] text-zinc-400">Tire Model</Label>
-                  <Combobox
-                    value={rearTire.model}
-                    onChange={(val) =>
-                      setRearTire((prev) => ({ ...prev, model: val }))
-                    }
-                    options={catalogTires}
-                    placeholder="e.g. Minion DHR II"
-                    className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
-                  />
-                </div>
+                  <div className="space-y-1">
+                    <Label className="text-[11px] text-zinc-400">Manufacturer</Label>
+                    <Combobox
+                      value={rearTire.manufacturer || "Maxxis"}
+                      onChange={(val) =>
+                        setRearTire((prev) => ({ ...prev, manufacturer: val }))
+                      }
+                      options={TIRE_MANUFACTURERS}
+                      placeholder="e.g. Maxxis"
+                      className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
+                    />
+                  </div>
 
-                <div className="space-y-1">
-                  <Label className="text-[11px] text-zinc-400">Tire Width</Label>
-                  <Select
-                    value={rearTire.width}
-                    onValueChange={(val) =>
-                      setRearTire((prev) => ({ ...prev, width: val }))
-                    }
-                  >
-                    <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm">
-                      <SelectValue placeholder="Select width" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
-                      {rearWidthOptions.map((w) => (
-                        <SelectItem key={w} value={w} className="text-base md:text-sm">
-                          {w}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+                  <div className="space-y-1">
+                    <Label className="text-[11px] text-zinc-400">Tire Model</Label>
+                    <Combobox
+                      value={rearTire.model}
+                      onChange={(val) =>
+                        setRearTire((prev) => ({ ...prev, model: val }))
+                      }
+                      options={catalogTires}
+                      placeholder="e.g. Minion DHR II"
+                      className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
+                    />
+                  </div>
 
-                <div className="space-y-1">
-                  <Label className="text-[11px] text-zinc-400">Casing</Label>
-                  <Select
-                    value={rearTire.casing}
-                    onValueChange={(val: TireCasing) =>
-                      setRearTire((prev) => ({ ...prev, casing: val }))
-                    }
-                  >
-                    <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
-                      <SelectItem value="light" className="text-base md:text-sm">
-                        Light (Trail/Road)
-                      </SelectItem>
-                      <SelectItem value="standard" className="text-base md:text-sm">
-                        Standard (Enduro/All-Rd)
-                      </SelectItem>
-                      <SelectItem value="heavy" className="text-base md:text-sm">
-                        Heavy / DH (DoubleDown)
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="space-y-1">
+                    <Label className="text-[11px] text-zinc-400">Width</Label>
+                    <Select
+                      value={rearTire.width}
+                      onValueChange={(val) =>
+                        setRearTire((prev) => ({ ...prev, width: val }))
+                      }
+                    >
+                      <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm">
+                        <SelectValue placeholder="Select width" />
+                      </SelectTrigger>
+                      <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
+                        {rearWidthOptions.map((w) => (
+                          <SelectItem key={w} value={w} className="text-base md:text-sm">
+                            {w}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-[11px] text-zinc-400">Casing</Label>
+                    <Combobox
+                      value={rearTire.casing || "heavy"}
+                      onChange={(val) =>
+                        setRearTire((prev) => ({ ...prev, casing: val as any }))
+                      }
+                      options={TIRE_CASINGS}
+                      placeholder="e.g. DoubleDown, DH"
+                      className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-[11px] text-zinc-400">Compound</Label>
+                    <Combobox
+                      value={rearTire.compound || ""}
+                      onChange={(val) =>
+                        setRearTire((prev) => ({ ...prev, compound: val }))
+                      }
+                      options={TIRE_COMPOUNDS}
+                      placeholder="e.g. MaxxTerra, Addix Soft"
+                      className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
+                    />
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Rear Wheel Size Selector when sameAsFront is active (supports Mullet 29/27.5 setups) */}
+              {sameAsFront && (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                  <div className="space-y-1">
+                    <Label className="text-[11px] text-zinc-400">Rear Wheel Diameter (Mullet Support)</Label>
+                    <Select
+                      value={rearTire.wheelSize}
+                      onValueChange={handleRearWheelSizeChange}
+                    >
+                      <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
+                        {WHEEL_SIZES.map((w) => (
+                          <SelectItem key={w} value={w} className="text-base md:text-sm">
+                            {w}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              )}
 
               {/* Rear Switches: Tubeless vs Tubes & Insert */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
@@ -859,7 +1089,7 @@ export function BikeBuilderDialog({
             </div>
           </div>
 
-          {/* 3. Suspension Components (Conditional) */}
+          {/* 3. Suspension Components & Kinematics */}
           <div className="space-y-3 pt-3 border-t border-white/5">
             <h4 className="text-xs font-semibold uppercase tracking-wider text-zinc-300">
               3. Suspension Setup
@@ -874,7 +1104,7 @@ export function BikeBuilderDialog({
                 </span>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 <div className="space-y-1">
                   <Label className="text-[11px] text-zinc-400">Fork Model</Label>
                   <Combobox
@@ -908,16 +1138,58 @@ export function BikeBuilderDialog({
                 </div>
 
                 {hasRearShock && (
-                  <div className="space-y-1">
-                    <Label className="text-[11px] text-zinc-400">Rear Shock</Label>
-                    <Combobox
-                      value={shockModel}
-                      onChange={setShockModel}
-                      options={catalogShocks}
-                      placeholder="e.g. Fox Float X2"
-                      className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
-                    />
-                  </div>
+                  <>
+                    <div className="space-y-1">
+                      <Label className="text-[11px] text-zinc-400">Rear Shock Model</Label>
+                      <Combobox
+                        value={shockModel}
+                        onChange={setShockModel}
+                        options={catalogShocks}
+                        placeholder="e.g. Fox Float X2"
+                        className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label htmlFor="rear-shock-stroke" className="text-[11px] text-zinc-400">
+                        Shock Stroke (mm)
+                      </Label>
+                      <Input
+                        id="rear-shock-stroke"
+                        type="number"
+                        min={30}
+                        max={100}
+                        step={0.5}
+                        value={rearShockStroke}
+                        onChange={(e) => setRearShockStroke(e.target.value)}
+                        placeholder="e.g. 55"
+                        className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm rounded-xl font-mono"
+                      />
+                      <p className="text-[10px] text-zinc-500 leading-tight">
+                        Stroke is the shock shaft compression distance (damper travel, e.g. 55mm).
+                      </p>
+                    </div>
+
+                    <div className="space-y-1">
+                      <Label htmlFor="rear-wheel-travel" className="text-[11px] text-zinc-400">
+                        Rear Wheel Travel (mm)
+                      </Label>
+                      <Input
+                        id="rear-wheel-travel"
+                        type="number"
+                        min={80}
+                        max={250}
+                        step={1}
+                        value={rearWheelTravel}
+                        onChange={(e) => setRearWheelTravel(e.target.value)}
+                        placeholder="e.g. 150"
+                        className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm rounded-xl font-mono"
+                      />
+                      <p className="text-[10px] text-zinc-500 leading-tight">
+                        Travel is the total rear axle movement driven by frame linkage (e.g. 150mm).
+                      </p>
+                    </div>
+                  </>
                 )}
               </div>
             )}

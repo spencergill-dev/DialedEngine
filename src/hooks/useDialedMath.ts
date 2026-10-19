@@ -46,7 +46,16 @@ function calculateTireModifiers(
   }
 
   // 4. Strict Modifier: If Heavy/DH Casing (-1.0 PSI)
-  if (tire.casing === "heavy") {
+  const casingLower = (tire.casing || "").toLowerCase();
+  const isHeavyCasing =
+    casingLower === "heavy" ||
+    casingLower.includes("doubledown") ||
+    casingLower.includes("dd") ||
+    casingLower.includes("dh") ||
+    casingLower.includes("downhill") ||
+    casingLower.includes("gravity");
+
+  if (isHeavyCasing) {
     mods.push({
       label: "Heavy / DH Casing",
       delta: -1.0,

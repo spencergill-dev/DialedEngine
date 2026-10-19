@@ -52,13 +52,28 @@ export function useRideSetup(
       });
     }
 
-    if (bike.frontTire.casing === "heavy") {
+    const frontCasing = (bike.frontTire.casing || "").toLowerCase();
+    const isFrontHeavy =
+      frontCasing === "heavy" ||
+      frontCasing.includes("doubledown") ||
+      frontCasing.includes("dd") ||
+      frontCasing.includes("dh") ||
+      frontCasing.includes("downhill") ||
+      frontCasing.includes("gravity");
+    const isFrontStandard =
+      !isFrontHeavy &&
+      (frontCasing === "standard" ||
+        frontCasing.includes("exo+") ||
+        frontCasing.includes("trail") ||
+        frontCasing.includes("enduro"));
+
+    if (isFrontHeavy) {
       frontModifiers.push({
         label: "Heavy / DH Casing",
         deltaPsi: -1.0,
         description: "Dropped 1.0 PSI for reinforced downhill/heavy sidewall support",
       });
-    } else if (bike.frontTire.casing === "standard") {
+    } else if (isFrontStandard) {
       frontModifiers.push({
         label: "Standard Casing",
         deltaPsi: -0.5,
@@ -99,13 +114,28 @@ export function useRideSetup(
       });
     }
 
-    if (bike.rearTire.casing === "heavy") {
+    const rearCasing = (bike.rearTire.casing || "").toLowerCase();
+    const isRearHeavy =
+      rearCasing === "heavy" ||
+      rearCasing.includes("doubledown") ||
+      rearCasing.includes("dd") ||
+      rearCasing.includes("dh") ||
+      rearCasing.includes("downhill") ||
+      rearCasing.includes("gravity");
+    const isRearStandard =
+      !isRearHeavy &&
+      (rearCasing === "standard" ||
+        rearCasing.includes("exo+") ||
+        rearCasing.includes("trail") ||
+        rearCasing.includes("enduro"));
+
+    if (isRearHeavy) {
       rearModifiers.push({
         label: "Heavy / DH Casing",
         deltaPsi: -1.0,
         description: "Dropped 1.0 PSI for stiff downhill/double-down casing",
       });
-    } else if (bike.rearTire.casing === "standard") {
+    } else if (isRearStandard) {
       rearModifiers.push({
         label: "Standard Casing",
         deltaPsi: -0.5,

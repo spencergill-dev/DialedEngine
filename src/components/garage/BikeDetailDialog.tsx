@@ -105,11 +105,16 @@ export function BikeDetailDialog({
                 {hasRearShock && (
                   <div>
                     <span className="text-zinc-500 font-sans text-[10px] uppercase font-semibold tracking-wider block">
-                      Rear Shock
+                      Rear Shock {bike.rearWheelTravel ? `(${bike.rearWheelTravel}mm travel)` : ""}
                     </span>
                     <span className="text-zinc-200 font-medium">
                       {bike.shockModel || "Air Shock"}
                     </span>
+                    {bike.rearShockStroke != null && (
+                      <span className="text-zinc-400 font-mono text-[10px] block mt-0.5">
+                        Stroke: {bike.rearShockStroke}mm
+                      </span>
+                    )}
                   </div>
                 )}
               </div>
@@ -136,18 +141,36 @@ export function BikeDetailDialog({
                 </span>
               </div>
               <div className="space-y-1 text-zinc-400 text-[11px]">
+                {(bike.frontTire.manufacturer || bike.frontTire.model) && (
+                  <div className="flex justify-between gap-2">
+                    <span className="shrink-0">Tire</span>
+                    <span className="text-zinc-200 font-medium truncate text-right">
+                      {[bike.frontTire.manufacturer, bike.frontTire.model].filter(Boolean).join(" ")}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span>Width</span>
                   <span className="font-mono text-zinc-200 font-semibold">
-                    {bike.frontTire.width}&quot;
+                    {bike.frontTire.width.includes('"') || bike.frontTire.width.toLowerCase().includes('mm')
+                      ? bike.frontTire.width
+                      : `${bike.frontTire.width}"`}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Casing</span>
-                  <span className="text-zinc-200 capitalize">
+                <div className="flex justify-between gap-2">
+                  <span className="shrink-0">Casing</span>
+                  <span className="text-zinc-200 capitalize truncate text-right">
                     {bike.frontTire.casing.replace("_", " ")}
                   </span>
                 </div>
+                {bike.frontTire.compound && (
+                  <div className="flex justify-between gap-2">
+                    <span className="shrink-0">Compound</span>
+                    <span className="text-zinc-200 truncate text-right">
+                      {bike.frontTire.compound}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center gap-1.5 pt-1">
                   <span
                     className={`px-1.5 py-0.5 rounded text-[10px] font-sans font-semibold uppercase tracking-wider ${
@@ -177,18 +200,36 @@ export function BikeDetailDialog({
                 </span>
               </div>
               <div className="space-y-1 text-zinc-400 text-[11px]">
+                {(bike.rearTire.manufacturer || bike.rearTire.model) && (
+                  <div className="flex justify-between gap-2">
+                    <span className="shrink-0">Tire</span>
+                    <span className="text-zinc-200 font-medium truncate text-right">
+                      {[bike.rearTire.manufacturer, bike.rearTire.model].filter(Boolean).join(" ")}
+                    </span>
+                  </div>
+                )}
                 <div className="flex justify-between">
                   <span>Width</span>
                   <span className="font-mono text-zinc-200 font-semibold">
-                    {bike.rearTire.width}&quot;
+                    {bike.rearTire.width.includes('"') || bike.rearTire.width.toLowerCase().includes('mm')
+                      ? bike.rearTire.width
+                      : `${bike.rearTire.width}"`}
                   </span>
                 </div>
-                <div className="flex justify-between">
-                  <span>Casing</span>
-                  <span className="text-zinc-200 capitalize">
+                <div className="flex justify-between gap-2">
+                  <span className="shrink-0">Casing</span>
+                  <span className="text-zinc-200 capitalize truncate text-right">
                     {bike.rearTire.casing.replace("_", " ")}
                   </span>
                 </div>
+                {bike.rearTire.compound && (
+                  <div className="flex justify-between gap-2">
+                    <span className="shrink-0">Compound</span>
+                    <span className="text-zinc-200 truncate text-right">
+                      {bike.rearTire.compound}
+                    </span>
+                  </div>
+                )}
                 <div className="flex items-center gap-1.5 pt-1">
                   <span
                     className={`px-1.5 py-0.5 rounded text-[10px] font-sans font-semibold uppercase tracking-wider ${

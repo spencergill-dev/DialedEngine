@@ -1,4 +1,4 @@
-export type TireCasing = "light" | "standard" | "heavy";
+export type TireCasing = "light" | "standard" | "heavy" | (string & {});
 
 export interface TireSetup {
   manufacturer: string;
