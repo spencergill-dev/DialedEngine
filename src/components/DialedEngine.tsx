@@ -10,6 +10,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { SplashScreen } from "./common/SplashScreen";
 import { useCyclingState } from "@/hooks/useCyclingState";
 import { supabase, isSupabaseConfigured } from "@/lib/supabaseClient";
+import { clearAllLocalUserData } from "@/lib/accountService";
 import type { Session } from "@supabase/supabase-js";
 
 export function DialedEngine() {
@@ -83,16 +84,15 @@ export function DialedEngine() {
     setMainView("garage");
   };
 
-  const handleAccountDeleted = () => {
-    if (session?.user?.id) {
-      const uid = session.user.id;
-      try {
-        localStorage.removeItem(`dialed_profile_${uid}`);
-        localStorage.removeItem(`dialed_bikes_${uid}`);
-        localStorage.removeItem(`dialed_active_bike_${uid}`);
-        localStorage.removeItem(`dialed_onboarded_${uid}`);
-      } catch {}
-    }
+  const handleAccountDeleted = async () => {
+    const uid = session?.user?.id;
+    try {
+      await supabase.auth.signOut({ scope: "local" });
+    } catch {}
+    try {
+      await supabase.auth.signOut();
+    } catch {}
+    clearAllLocalUserData(uid);
     setSession(null);
     setIsGuestMode(false);
     setMainView("garage");
@@ -112,7 +112,7 @@ export function DialedEngine() {
 
       {/* 1. Unauthenticated Routing: Redirect to LoginView */}
       {!session && !isGuestMode ? (
-        <div className="flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden bg-[#111111] w-full max-w-full">
+        <div className="flex-1 flex flex-col min-h-0 w-full max-w-full bg-[#111111]">
           <LoginView
             onSuccess={() => {
               setMainView("garage");
@@ -126,7 +126,7 @@ export function DialedEngine() {
         </div>
       ) : session && !isGuestMode && !hasCompletedOnboarding ? (
         /* 2. New Rider Onboarding Flow: Profile baseline setup before entering garage */
-        <div className="flex-1 flex flex-col min-h-0 overflow-y-auto overflow-x-hidden bg-[#111111] w-full max-w-full">
+        <div className="flex-1 flex flex-col min-h-0 w-full max-w-full bg-[#111111]">
           <OnboardingView
             initialDisplayName={profile.displayName}
             onComplete={async (profileData) => {

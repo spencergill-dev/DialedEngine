@@ -241,18 +241,20 @@ export function LoginView({
   };
 
   return (
-    <div className="min-h-[100dvh] w-full bg-[#111111] text-zinc-100 flex flex-col items-center justify-start overflow-y-auto px-4 pt-6 sm:pt-10 pb-28 sm:pb-16 font-sans selection:bg-lime-500/25 selection:text-lime-300 relative">
+    <div className="flex-1 min-h-[100dvh] w-full max-w-full bg-[#111111] text-zinc-100 flex flex-col items-center justify-start overflow-y-auto overflow-x-hidden px-4 pt-6 sm:pt-10 pb-36 sm:pb-20 font-sans selection:bg-lime-500/25 selection:text-lime-300 relative">
       {/* Ambient Radial Atmospheric Glow */}
-      <div
-        aria-hidden="true"
-        className="pointer-events-none absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] sm:w-[750px] h-[300px] sm:h-[400px] rounded-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-lime-400/[0.07] via-emerald-500/[0.02] to-transparent blur-[90px] -z-0"
-      />
+      <div className="absolute inset-0 overflow-hidden pointer-events-none -z-0">
+        <div
+          aria-hidden="true"
+          className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[500px] sm:w-[750px] h-[300px] sm:h-[400px] rounded-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-lime-400/[0.07] via-emerald-500/[0.02] to-transparent blur-[90px]"
+        />
+      </div>
 
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: "easeOut" }}
-        className="w-full max-w-sm space-y-6 relative z-10 my-auto"
+        className="w-full max-w-sm space-y-6 relative z-10 mx-auto my-0 sm:my-auto"
       >
         {/* Brand Header */}
         <div className="text-center space-y-2.5">
