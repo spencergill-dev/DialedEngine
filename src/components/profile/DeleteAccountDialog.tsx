@@ -34,7 +34,7 @@ export function DeleteAccountDialog({
   const [isDeleting, setIsDeleting] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const isConfirmed = confirmText.trim() === "DELETE" && isAcknowledged;
+  const isConfirmed = confirmText.trim().toUpperCase() === "DELETE" && isAcknowledged;
 
   const handleClose = () => {
     if (isDeleting) return;
@@ -128,7 +128,7 @@ export function DeleteAccountDialog({
             <span>
               Type <strong className="text-red-400 font-mono">DELETE</strong> to confirm:
             </span>
-            {confirmText.trim() === "DELETE" && (
+            {confirmText.trim().toUpperCase() === "DELETE" && (
               <span className="text-[10px] font-mono font-bold text-lime-400">
                 VERIFIED
               </span>
@@ -139,7 +139,7 @@ export function DeleteAccountDialog({
             type="text"
             placeholder="Type DELETE"
             value={confirmText}
-            onChange={(e) => setConfirmText(e.target.value)}
+            onChange={(e) => setConfirmText(e.target.value.toUpperCase())}
             disabled={isDeleting}
             className="h-10 bg-zinc-900 border-zinc-800 rounded-xl font-mono text-sm uppercase placeholder:normal-case placeholder:text-zinc-600 focus-visible:ring-red-500 text-white"
           />
