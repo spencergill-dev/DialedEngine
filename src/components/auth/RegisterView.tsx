@@ -152,8 +152,9 @@ export function RegisterView({
         {/* Registration Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           {errorMessage && (
-            <div className="p-3 rounded-xl bg-red-950/40 border border-red-900/50 text-red-300 text-xs font-sans">
-              {errorMessage}
+            <div className="p-4 rounded-xl bg-red-950/70 border border-red-500/40 text-red-200 text-xs font-sans shadow-lg flex flex-col gap-y-1.5">
+              <span className="font-bold text-red-400 uppercase tracking-wider text-[11px]">Registration Error</span>
+              <p className="text-red-200/90 text-xs leading-relaxed">{errorMessage}</p>
             </div>
           )}
 
@@ -232,10 +233,10 @@ export function RegisterView({
                 Confirm Password
               </Label>
               {password.length > 0 && confirmPassword.length > 0 && password === confirmPassword && (
-                <span className="text-[10px] font-bold text-lime-400 font-mono">MATCH</span>
+                <span className="text-[10px] font-bold text-lime-400 font-mono px-1.5 py-0.5 rounded-md bg-lime-400/10 border border-lime-400/30">MATCH</span>
               )}
               {confirmPassword.length > 0 && password !== confirmPassword && (
-                <span className="text-[10px] font-medium text-amber-400 font-mono">MISMATCH</span>
+                <span className="text-[10px] font-medium text-amber-400 font-mono px-1.5 py-0.5 rounded-md bg-amber-400/10 border border-amber-400/30">MISMATCH</span>
               )}
             </div>
             <div className="relative">
@@ -278,7 +279,7 @@ export function RegisterView({
         </form>
 
         {/* Footer Navigation */}
-        <div className="space-y-3 pt-2 text-center">
+        <div className="space-y-3 pt-6 pb-4 text-center">
           <p className="text-xs text-zinc-400">
             Already have an account?{" "}
             <button
@@ -294,9 +295,10 @@ export function RegisterView({
             <button
               type="button"
               onClick={onContinueAsGuest}
-              className="text-[11px] text-zinc-500 hover:text-zinc-300 transition-colors block w-full pt-1"
+              className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors inline-flex items-center gap-1.5 cursor-pointer font-sans"
             >
-              Continue in Local / Offline Mode →
+              <span>Continue in local preview mode</span>
+              <span>→</span>
             </button>
           )}
         </div>

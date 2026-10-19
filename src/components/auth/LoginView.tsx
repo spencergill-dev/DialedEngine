@@ -317,20 +317,20 @@ export function LoginView({
         </div>
 
         {/* Form Card */}
-        <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/80 backdrop-blur-md shadow-xl">
+        <div className="p-6 rounded-xl bg-zinc-900/50 border border-zinc-800/80 backdrop-blur-md shadow-xl">
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* High-Visibility Error Banner */}
             {authError && (
               <motion.div
                 initial={{ opacity: 0, y: -6, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                className="p-3.5 rounded-xl bg-red-950/70 border border-red-500/40 text-red-200 text-xs font-sans shadow-lg shadow-red-950/40 space-y-1"
+                className="p-4 rounded-xl bg-red-950/70 border border-red-500/40 text-red-200 text-xs font-sans shadow-lg shadow-red-950/40 flex flex-col gap-y-1.5"
               >
                 <div className="flex items-center gap-2 text-red-400 font-bold uppercase tracking-wider text-[11px]">
-                  <AlertCircle className="w-4 h-4 shrink-0" />
+                  <AlertCircle className="w-4 h-4 shrink-0 text-red-400" />
                   <span>{authError.title}</span>
                 </div>
-                <p className="text-red-200/90 leading-relaxed pl-6 text-[11px]">
+                <p className="text-red-200/90 text-xs leading-relaxed">
                   {authError.message}
                 </p>
               </motion.div>
@@ -341,13 +341,13 @@ export function LoginView({
               <motion.div
                 initial={{ opacity: 0, y: -6, scale: 0.98 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
-                className="p-3.5 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-200 text-xs font-sans shadow-lg space-y-1"
+                className="p-4 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-200 text-xs font-sans shadow-lg flex flex-col gap-y-1.5"
               >
                 <div className="flex items-center gap-2 text-emerald-400 font-bold uppercase tracking-wider text-[11px]">
-                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-400" />
                   <span>{infoBanner.title}</span>
                 </div>
-                <p className="text-emerald-200/90 leading-relaxed pl-6 text-[11px]">
+                <p className="text-emerald-200/90 text-xs leading-relaxed">
                   {infoBanner.message}
                 </p>
               </motion.div>
@@ -479,13 +479,13 @@ export function LoginView({
                       Confirm Password
                     </Label>
                     {passwordsMatch && (
-                      <span className="text-[10px] font-bold text-lime-400 flex items-center gap-1 font-mono">
-                        <Check className="w-3 h-3" />
+                      <span className="text-[10px] font-bold text-lime-400 flex items-center gap-1 font-mono px-1.5 py-0.5 rounded-md bg-lime-400/10 border border-lime-400/30">
+                        <Check className="w-3 h-3 text-lime-400" strokeWidth={2.5} />
                         MATCH
                       </span>
                     )}
                     {passwordsMismatch && (
-                      <span className="text-[10px] font-medium text-amber-400 font-mono">
+                      <span className="text-[10px] font-medium text-amber-400 font-mono px-1.5 py-0.5 rounded-md bg-amber-400/10 border border-amber-400/30">
                         MISMATCH
                       </span>
                     )}
@@ -506,7 +506,7 @@ export function LoginView({
                       disabled={isLoading}
                       className={`h-11 pl-9 pr-10 bg-zinc-950/80 border-none ring-1 text-base md:text-sm placeholder:text-zinc-600 rounded-xl font-mono transition-colors ${
                         passwordsMatch
-                          ? "ring-lime-500/50 focus-visible:ring-lime-400"
+                          ? "ring-lime-400/50 focus-visible:ring-lime-400"
                           : passwordsMismatch
                           ? "ring-amber-500/50 focus-visible:ring-amber-400"
                           : "ring-white/10 focus-visible:ring-lime-400"
@@ -569,11 +569,11 @@ export function LoginView({
 
         {/* Guest / Offline Mode Fallback */}
         {onContinueAsGuest && (
-          <div className="text-center pt-1">
+          <div className="text-center pt-6 pb-4">
             <button
               type="button"
               onClick={onContinueAsGuest}
-              className="text-xs text-zinc-500 hover:text-zinc-300 transition-colors inline-flex items-center gap-1.5 cursor-pointer"
+              className="text-xs text-zinc-400 hover:text-zinc-200 transition-colors inline-flex items-center gap-1.5 cursor-pointer font-sans"
             >
               <span>Continue in local preview mode</span>
               <span>→</span>
