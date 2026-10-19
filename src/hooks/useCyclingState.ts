@@ -192,29 +192,46 @@ export function useCyclingState(
 
     async function syncUserData() {
       try {
-        // Parallelize initial queries: Fetch Profile and User Bikes concurrently to eliminate waterfalls
-        const [profileResult, bikesResult] = await Promise.all([
-          supabase
-            .from("profiles")
-            .select("*")
-            .eq("id", userId!)
-            .maybeSingle(),
-          supabase
-            .from("user_bikes")
-            .select("*")
-            .eq("profile_id", userId!)
-            .order("created_at", { ascending: false }),
-        ]);
+        // Eliminate N+1 queries: Single-query resource embedding fetching profile and fleet in 1 network trip
+        let profileRow: any = null;
+        let cloudBikes: any[] = [];
+
+        const { data: embeddedData, error: embeddedErr } = await supabase
+          .from("profiles")
+          .select("*, user_bikes(*)")
+          .eq("id", userId!)
+          .maybeSingle();
 
         if (isCancelled) return;
 
-        const profileRow = profileResult.data;
-        const profileErr = profileResult.error;
-        const cloudBikes = bikesResult.data;
-        const bikesErr = bikesResult.error;
+        if (!embeddedErr && embeddedData) {
+          profileRow = embeddedData;
+          cloudBikes = Array.isArray(embeddedData.user_bikes) ? embeddedData.user_bikes : [];
+          // Sort fleet by created_at descending
+          cloudBikes.sort(
+            (a, b) => new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+          );
+        } else {
+          if (embeddedErr) {
+            console.warn("[useCyclingState] Resource embedding error, running fallback:", embeddedErr);
+          }
+          // Concurrent fallback if profile row does not exist yet (brand new signup)
+          const [profileResult, bikesResult] = await Promise.all([
+            supabase
+              .from("profiles")
+              .select("*")
+              .eq("id", userId!)
+              .maybeSingle(),
+            supabase
+              .from("user_bikes")
+              .select("*")
+              .eq("profile_id", userId!)
+              .order("created_at", { ascending: false }),
+          ]);
 
-        if (profileErr) {
-          console.warn("[useCyclingState] Profile query warning:", profileErr);
+          if (isCancelled) return;
+          profileRow = profileResult.data;
+          cloudBikes = bikesResult.data || [];
         }
 
         if (profileRow && profileRow.weight_lbs) {
@@ -252,10 +269,6 @@ export function useCyclingState(
           }
           // Brand new user with no saved weight requires onboarding
           setHasCompletedOnboarding(false);
-        }
-
-        if (bikesErr) {
-          console.error("[useCyclingState] Error fetching user_bikes:", bikesErr);
         }
 
         // Strictly set bikes to whatever the database returned (could be empty array)

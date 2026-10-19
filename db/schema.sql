@@ -129,28 +129,28 @@ ALTER TABLE public.setups ENABLE ROW LEVEL SECURITY;
 -- Users Table Policies
 CREATE POLICY "Users can view own profile"
     ON public.users FOR SELECT
-    USING (auth.uid() = id);
+    USING (id = (SELECT auth.uid()));
 
 CREATE POLICY "Users can update own profile"
     ON public.users FOR UPDATE
-    USING (auth.uid() = id);
+    USING (id = (SELECT auth.uid()));
 
 -- Bikes Table Policies
 CREATE POLICY "Users can view own bikes"
     ON public.bikes FOR SELECT
-    USING (auth.uid() = user_id);
+    USING (user_id = (SELECT auth.uid()));
 
 CREATE POLICY "Users can insert own bikes"
     ON public.bikes FOR INSERT
-    WITH CHECK (auth.uid() = user_id);
+    WITH CHECK (user_id = (SELECT auth.uid()));
 
 CREATE POLICY "Users can update own bikes"
     ON public.bikes FOR UPDATE
-    USING (auth.uid() = user_id);
+    USING (user_id = (SELECT auth.uid()));
 
 CREATE POLICY "Users can delete own bikes"
     ON public.bikes FOR DELETE
-    USING (auth.uid() = user_id);
+    USING (user_id = (SELECT auth.uid()));
 
 -- Setups Table Policies
 CREATE POLICY "Users can view setups of own bikes"
@@ -159,7 +159,7 @@ CREATE POLICY "Users can view setups of own bikes"
         EXISTS (
             SELECT 1 FROM public.bikes
             WHERE public.bikes.id = public.setups.bike_id
-            AND public.bikes.user_id = auth.uid()
+            AND public.bikes.user_id = (SELECT auth.uid())
         )
     );
 
@@ -169,7 +169,7 @@ CREATE POLICY "Users can insert setups for own bikes"
         EXISTS (
             SELECT 1 FROM public.bikes
             WHERE public.bikes.id = public.setups.bike_id
-            AND public.bikes.user_id = auth.uid()
+            AND public.bikes.user_id = (SELECT auth.uid())
         )
     );
 
@@ -179,7 +179,7 @@ CREATE POLICY "Users can update setups of own bikes"
         EXISTS (
             SELECT 1 FROM public.bikes
             WHERE public.bikes.id = public.setups.bike_id
-            AND public.bikes.user_id = auth.uid()
+            AND public.bikes.user_id = (SELECT auth.uid())
         )
     );
 
@@ -189,6 +189,6 @@ CREATE POLICY "Users can delete setups of own bikes"
         EXISTS (
             SELECT 1 FROM public.bikes
             WHERE public.bikes.id = public.setups.bike_id
-            AND public.bikes.user_id = auth.uid()
+            AND public.bikes.user_id = (SELECT auth.uid())
         )
     );
