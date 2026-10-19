@@ -69,12 +69,12 @@ export function RegisterView({
   };
 
   return (
-    <div className="min-h-screen bg-[#111111] text-zinc-100 flex flex-col justify-center items-center px-4 py-12 font-sans selection:bg-lime-500/25 selection:text-lime-300">
+    <div className="min-h-[100dvh] w-full bg-[#111111] text-zinc-100 flex flex-col items-center justify-start overflow-y-auto px-4 pt-6 sm:pt-10 pb-28 sm:pb-16 font-sans selection:bg-lime-500/25 selection:text-lime-300">
       <motion.div
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: "easeOut" }}
-        className="w-full max-w-sm space-y-6"
+        className="w-full max-w-sm space-y-6 my-auto"
       >
         {/* Brand Header */}
         <div className="text-center space-y-2">

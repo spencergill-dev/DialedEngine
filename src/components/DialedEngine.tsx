@@ -85,7 +85,7 @@ export function DialedEngine() {
   // 1. Initial Auth Check or Cloud Profile Verification Loading State
   if (isAuthLoading || (session && isSyncing && !hasCompletedOnboarding)) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-[#111111] text-zinc-100 p-6 min-h-screen">
+      <div className="flex-1 flex flex-col items-center justify-center bg-[#111111] text-zinc-100 p-6 min-h-[100dvh]">
         <div className="flex flex-col items-center gap-3">
           <img
             src="/logo.png"
@@ -104,7 +104,7 @@ export function DialedEngine() {
   // 2. Unauthenticated Routing: Redirect to LoginView
   if (!session && !isGuestMode) {
     return (
-      <div className="flex-1 flex flex-col min-h-0 bg-[#111111]">
+      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto bg-[#111111]">
         <LoginView
           onSuccess={() => {
             setMainView("garage");
@@ -122,7 +122,7 @@ export function DialedEngine() {
   // 3. New Rider Onboarding Flow: Profile baseline setup before entering garage
   if (session && !isGuestMode && !hasCompletedOnboarding) {
     return (
-      <div className="flex-1 flex flex-col min-h-0 bg-[#111111]">
+      <div className="flex-1 flex flex-col min-h-0 overflow-y-auto bg-[#111111]">
         <OnboardingView
           initialDisplayName={profile.displayName}
           onComplete={async (profileData) => {

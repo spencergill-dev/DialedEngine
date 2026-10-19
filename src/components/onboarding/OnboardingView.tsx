@@ -109,7 +109,7 @@ export function OnboardingView({
   };
 
   return (
-    <div className="min-h-screen bg-[#111111] text-zinc-100 flex flex-col justify-center items-center px-4 py-8 sm:py-12 font-sans selection:bg-lime-500/25 selection:text-lime-300 relative overflow-hidden">
+    <div className="min-h-[100dvh] w-full bg-[#111111] text-zinc-100 flex flex-col items-center justify-start overflow-y-auto px-4 pt-6 sm:pt-10 pb-28 sm:pb-16 font-sans selection:bg-lime-500/25 selection:text-lime-300 relative">
       {/* Ambient Radial Atmospheric Glow */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[550px] h-[550px] bg-lime-500/10 rounded-full blur-[140px] pointer-events-none" />
 
@@ -117,7 +117,7 @@ export function OnboardingView({
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-xl relative z-10"
+        className="w-full max-w-xl relative z-10 my-auto"
       >
         {/* Header Stack */}
         <div className="text-center mb-8">
