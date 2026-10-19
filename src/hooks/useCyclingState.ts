@@ -77,7 +77,10 @@ function mapDbRowToBike(row: any): Bike {
  * Manages reactive application state for rider metrics, bike fleet, and active setup.
  * Strictly isolates cloud user data by authenticated profile_id with zero mock fallback.
  */
-export function useCyclingState(userId?: string | null) {
+export function useCyclingState(
+  userId?: string | null,
+  userMetadata?: Record<string, any> | null
+) {
   // Synchronous initial hydrate from scoped localStorage
   const [profile, setProfile] = useState<RiderProfile>(() => {
     if (userId) {
@@ -86,7 +89,7 @@ export function useCyclingState(userId?: string | null) {
         if (saved) return JSON.parse(saved);
       } catch {}
       return {
-        displayName: "",
+        displayName: userMetadata?.first_name || userMetadata?.name || "",
         weight: null,
         heightInches: null,
         height: "",
@@ -240,16 +243,13 @@ export function useCyclingState(userId?: string | null) {
             localStorage.setItem(`dialed_onboarded_${userId}`, "true");
           } catch {}
         } else {
-          // Check if auth user has metadata from sign-up
-          try {
-            const { data: { user } } = await supabase.auth.getUser();
-            if (user?.user_metadata?.first_name) {
-              setProfile((prev) => ({
-                ...prev,
-                displayName: user.user_metadata.first_name,
-              }));
-            }
-          } catch {}
+          // Check if auth user has metadata from sign-up (zero-network lookup from AuthContext)
+          if (userMetadata?.first_name || userMetadata?.name) {
+            setProfile((prev) => ({
+              ...prev,
+              displayName: userMetadata.first_name || userMetadata.name,
+            }));
+          }
           // Brand new user with no saved weight requires onboarding
           setHasCompletedOnboarding(false);
         }

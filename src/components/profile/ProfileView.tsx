@@ -24,7 +24,7 @@ import { toast } from "@/components/ui/sonner";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { ProfileSkeleton } from "./ProfileSkeleton";
 import { DeleteAccountDialog } from "./DeleteAccountDialog";
-import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/context/AuthContext";
 import type { RiderProfile, RidingStyle } from "@/types/cycling";
 
 interface ProfileViewProps {
@@ -44,25 +44,10 @@ export function ProfileView({
   onSignOut,
   onAccountDeleted,
 }: ProfileViewProps) {
+  const { userId, userEmail, signOut: authSignOut } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isAuthOpen, setIsAuthOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [userEmail, setUserEmail] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string>("");
-
-  useEffect(() => {
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      if (user?.email) setUserEmail(user.email);
-      if (user?.id) setUserId(user.id);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserEmail(session?.user?.email || null);
-      if (session?.user?.id) setUserId(session.user.id);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
 
   // Form draft state
   const [displayName, setDisplayName] = useState(profile.displayName || "");
@@ -359,7 +344,7 @@ export function ProfileView({
                     if (onSignOut) {
                       onSignOut();
                     } else {
-                      await supabase.auth.signOut();
+                      await authSignOut();
                     }
                     toast.success("Signed out successfully");
                   }}
@@ -592,7 +577,7 @@ export function ProfileView({
       <DeleteAccountDialog
         isOpen={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
-        userId={userId}
+        userId={userId || ""}
         userEmail={userEmail}
         onAccountDeleted={() => {
           setIsDeleteDialogOpen(false);

@@ -1,6 +1,6 @@
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { LoginView } from "./LoginView";
-import { supabase } from "@/lib/supabaseClient";
+import { useAuth } from "@/context/AuthContext";
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -15,6 +15,8 @@ export function AuthModal({
   initialMode = "login",
   onAuthSuccess,
 }: AuthModalProps) {
+  const { user } = useAuth();
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-md p-0 overflow-hidden bg-[#111111] border border-zinc-800 rounded-3xl shadow-2xl">
@@ -24,14 +26,10 @@ export function AuthModal({
         <div className="p-6 sm:p-8">
           <LoginView
             onSuccess={() => {
-              if (onAuthSuccess) {
-                supabase.auth.getUser().then(({ data: { user } }) => {
-                  if (user) {
-                    onAuthSuccess({
-                      email: user.email || "",
-                      name: user.user_metadata?.first_name || user.email?.split("@")[0],
-                    });
-                  }
+              if (onAuthSuccess && user) {
+                onAuthSuccess({
+                  email: user.email || "",
+                  name: user.user_metadata?.first_name || user.email?.split("@")[0],
                 });
               }
               onClose();

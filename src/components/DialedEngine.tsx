@@ -7,9 +7,7 @@ import { RideSetupSkeleton } from "./setup/RideSetupSkeleton";
 import { Toaster } from "@/components/ui/sonner";
 import { SplashScreen } from "./common/SplashScreen";
 import { useCyclingState } from "@/hooks/useCyclingState";
-import { supabase, isSupabaseConfigured } from "@/lib/supabaseClient";
-import { clearAllLocalUserData } from "@/lib/accountService";
-import type { Session } from "@supabase/supabase-js";
+import { useAuth } from "@/context/AuthContext";
 
 // React.lazy dynamic code-splitting for heavy views to minimize initial bundle size
 const GarageView = lazy(() =>
@@ -29,49 +27,25 @@ const OnboardingView = lazy(() =>
 );
 
 export function DialedEngine() {
-  const [session, setSession] = useState<Session | null>(null);
-  const [isAuthLoading, setIsAuthLoading] = useState(true);
-  const [isGuestMode, setIsGuestMode] = useState(false);
+  const {
+    session,
+    user,
+    userId,
+    isAuthLoading,
+    isGuestMode,
+    setIsGuestMode,
+    signOut,
+  } = useAuth();
+
   const [isSplashDismissed, setIsSplashDismissed] = useState(false);
   const [mainView, setMainView] = useState<"setup" | "garage" | "profile">("garage");
 
-  // Track Supabase Auth session & handle routing transitions
+  // Automatically navigate to garage when authenticated session is active
   useEffect(() => {
-    let isMounted = true;
-
-    if (!isSupabaseConfigured) {
-      setIsAuthLoading(false);
-      return;
+    if (session) {
+      setMainView("garage");
     }
-
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!isMounted) return;
-      setSession(session);
-      setIsAuthLoading(false);
-      if (session) {
-        setMainView("garage");
-      }
-    });
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, newSession) => {
-      if (!isMounted) return;
-      setSession(newSession);
-      setIsAuthLoading(false);
-      if (newSession) {
-        setIsGuestMode(false);
-        setMainView("garage");
-      }
-    });
-
-    return () => {
-      isMounted = false;
-      subscription.unsubscribe();
-    };
-  }, []);
-
-  const userId = session?.user?.id || null;
+  }, [session]);
 
   const {
     profile,
@@ -86,30 +60,15 @@ export function DialedEngine() {
     hasCompletedOnboarding,
     completeOnboarding,
     isSyncing,
-  } = useCyclingState(userId);
+  } = useCyclingState(userId, user?.user_metadata);
 
   const handleSignOut = async () => {
-    try {
-      await supabase.auth.signOut();
-    } catch (err) {
-      console.error("Sign out error:", err);
-    }
-    setSession(null);
-    setIsGuestMode(false);
+    await signOut();
     setMainView("garage");
   };
 
   const handleAccountDeleted = async () => {
-    const uid = session?.user?.id;
-    try {
-      await supabase.auth.signOut({ scope: "local" });
-    } catch {}
-    try {
-      await supabase.auth.signOut();
-    } catch {}
-    clearAllLocalUserData(uid);
-    setSession(null);
-    setIsGuestMode(false);
+    await signOut();
     setMainView("garage");
   };
 
