@@ -26,6 +26,18 @@ export function SplashScreen({
   const [stageIndex, setStageIndex] = useState(0);
   const [canExit, setCanExit] = useState(false);
 
+  // Smoothly fade out the HTML-level static splash screen once React is mounted
+  useEffect(() => {
+    const staticEl = document.getElementById("static-splash");
+    if (staticEl) {
+      staticEl.classList.add("splash-hidden");
+      const timer = setTimeout(() => {
+        staticEl.remove();
+      }, 550);
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
   // Progressive animation of the loading bar
   useEffect(() => {
     const startTime = Date.now();

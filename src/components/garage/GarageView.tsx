@@ -1,13 +1,18 @@
-import { useState } from "react";
+import { useState, lazy, Suspense } from "react";
 import { Plus, ArrowLeft, Bike as BikeIcon, ChevronRight, Zap } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { BikeBuilderDialog } from "./BikeBuilderDialog";
 import { DeleteBikeDialog } from "./DeleteBikeDialog";
-import { BikeDetailDialog } from "./BikeDetailDialog";
 import { GarageSkeleton } from "./GarageSkeleton";
 import { toast } from "sonner";
 import type { Bike, RiderProfile } from "@/types/cycling";
+
+const BikeBuilderDialog = lazy(() =>
+  import("./BikeBuilderDialog").then((m) => ({ default: m.BikeBuilderDialog }))
+);
+const BikeDetailDialog = lazy(() =>
+  import("./BikeDetailDialog").then((m) => ({ default: m.BikeDetailDialog }))
+);
 
 interface GarageViewProps {
   profile: RiderProfile;
@@ -267,29 +272,37 @@ export function GarageView({
       )}
 
       {/* Bike Details Dialog (Detail View) */}
-      <BikeDetailDialog
-        open={detailOpen}
-        onOpenChange={setDetailOpen}
-        bike={activeDetailBike}
-        isActive={activeDetailBike?.id === activeBikeId}
-        canDelete={bikes.length > 1}
-        onSelectActiveBike={(id) => {
-          onSelectActiveBike(id);
-          toast.success("Active ride updated", {
-            description: `${activeDetailBike?.brand === "Custom" ? activeDetailBike?.customBrand || "Custom" : activeDetailBike?.brand} ${activeDetailBike?.model} is now your active ride.`,
-          });
-        }}
-        onEdit={handleOpenEdit}
-        onDelete={handleOpenDelete}
-      />
+      {detailOpen && (
+        <Suspense fallback={null}>
+          <BikeDetailDialog
+            open={detailOpen}
+            onOpenChange={setDetailOpen}
+            bike={activeDetailBike}
+            isActive={activeDetailBike?.id === activeBikeId}
+            canDelete={bikes.length > 1}
+            onSelectActiveBike={(id) => {
+              onSelectActiveBike(id);
+              toast.success("Active ride updated", {
+                description: `${activeDetailBike?.brand === "Custom" ? activeDetailBike?.customBrand || "Custom" : activeDetailBike?.brand} ${activeDetailBike?.model} is now your active ride.`,
+              });
+            }}
+            onEdit={handleOpenEdit}
+            onDelete={handleOpenDelete}
+          />
+        </Suspense>
+      )}
 
       {/* Add / Edit Bike Builder */}
-      <BikeBuilderDialog
-        open={builderOpen}
-        onOpenChange={setBuilderOpen}
-        bikeToEdit={bikeToEdit}
-        onSave={handleSave}
-      />
+      {builderOpen && (
+        <Suspense fallback={null}>
+          <BikeBuilderDialog
+            open={builderOpen}
+            onOpenChange={setBuilderOpen}
+            bikeToEdit={bikeToEdit}
+            onSave={handleSave}
+          />
+        </Suspense>
+      )}
 
       {/* Delete Confirmation Alert */}
       <DeleteBikeDialog

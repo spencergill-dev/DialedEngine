@@ -189,14 +189,26 @@ export function useCyclingState(userId?: string | null) {
 
     async function syncUserData() {
       try {
-        // 1. Fetch Profile
-        const { data: profileRow, error: profileErr } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", userId!)
-          .maybeSingle();
+        // Parallelize initial queries: Fetch Profile and User Bikes concurrently to eliminate waterfalls
+        const [profileResult, bikesResult] = await Promise.all([
+          supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", userId!)
+            .maybeSingle(),
+          supabase
+            .from("user_bikes")
+            .select("*")
+            .eq("profile_id", userId!)
+            .order("created_at", { ascending: false }),
+        ]);
 
         if (isCancelled) return;
+
+        const profileRow = profileResult.data;
+        const profileErr = profileResult.error;
+        const cloudBikes = bikesResult.data;
+        const bikesErr = bikesResult.error;
 
         if (profileErr) {
           console.warn("[useCyclingState] Profile query warning:", profileErr);
@@ -241,15 +253,6 @@ export function useCyclingState(userId?: string | null) {
           // Brand new user with no saved weight requires onboarding
           setHasCompletedOnboarding(false);
         }
-
-        // 2. Fetch User Bikes strictly by profile_id = userId
-        const { data: cloudBikes, error: bikesErr } = await supabase
-          .from("user_bikes")
-          .select("*")
-          .eq("profile_id", userId!)
-          .order("created_at", { ascending: false });
-
-        if (isCancelled) return;
 
         if (bikesErr) {
           console.error("[useCyclingState] Error fetching user_bikes:", bikesErr);

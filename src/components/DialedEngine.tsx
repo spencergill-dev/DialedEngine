@@ -1,17 +1,32 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { TopNavHeader } from "./layout/TopNavHeader";
 import { MobileBottomNav } from "./layout/MobileBottomNav";
-import { ProfileView } from "./profile/ProfileView";
-import { GarageView } from "./garage/GarageView";
-import { RideSetupView } from "./setup/RideSetupView";
-import { LoginView } from "./auth/LoginView";
-import { OnboardingView } from "./onboarding/OnboardingView";
+import { GarageSkeleton } from "./garage/GarageSkeleton";
+import { ProfileSkeleton } from "./profile/ProfileSkeleton";
+import { RideSetupSkeleton } from "./setup/RideSetupSkeleton";
 import { Toaster } from "@/components/ui/sonner";
 import { SplashScreen } from "./common/SplashScreen";
 import { useCyclingState } from "@/hooks/useCyclingState";
 import { supabase, isSupabaseConfigured } from "@/lib/supabaseClient";
 import { clearAllLocalUserData } from "@/lib/accountService";
 import type { Session } from "@supabase/supabase-js";
+
+// React.lazy dynamic code-splitting for heavy views to minimize initial bundle size
+const GarageView = lazy(() =>
+  import("./garage/GarageView").then((m) => ({ default: m.GarageView }))
+);
+const RideSetupView = lazy(() =>
+  import("./setup/RideSetupView").then((m) => ({ default: m.RideSetupView }))
+);
+const ProfileView = lazy(() =>
+  import("./profile/ProfileView").then((m) => ({ default: m.ProfileView }))
+);
+const LoginView = lazy(() =>
+  import("./auth/LoginView").then((m) => ({ default: m.LoginView }))
+);
+const OnboardingView = lazy(() =>
+  import("./onboarding/OnboardingView").then((m) => ({ default: m.OnboardingView }))
+);
 
 export function DialedEngine() {
   const [session, setSession] = useState<Session | null>(null);
@@ -113,27 +128,31 @@ export function DialedEngine() {
       {/* 1. Unauthenticated Routing: Redirect to LoginView */}
       {!session && !isGuestMode ? (
         <div className="flex-1 flex flex-col min-h-0 w-full max-w-full bg-[#111111]">
-          <LoginView
-            onSuccess={() => {
-              setMainView("garage");
-            }}
-            onContinueAsGuest={() => {
-              setIsGuestMode(true);
-              setMainView("garage");
-            }}
-          />
+          <Suspense fallback={null}>
+            <LoginView
+              onSuccess={() => {
+                setMainView("garage");
+              }}
+              onContinueAsGuest={() => {
+                setIsGuestMode(true);
+                setMainView("garage");
+              }}
+            />
+          </Suspense>
           <Toaster position="bottom-right" richColors />
         </div>
       ) : session && !isGuestMode && !hasCompletedOnboarding ? (
         /* 2. New Rider Onboarding Flow: Profile baseline setup before entering garage */
         <div className="flex-1 flex flex-col min-h-0 w-full max-w-full bg-[#111111]">
-          <OnboardingView
-            initialDisplayName={profile.displayName}
-            onComplete={async (profileData) => {
-              await completeOnboarding(profileData);
-              setMainView("garage");
-            }}
-          />
+          <Suspense fallback={null}>
+            <OnboardingView
+              initialDisplayName={profile.displayName}
+              onComplete={async (profileData) => {
+                await completeOnboarding(profileData);
+                setMainView("garage");
+              }}
+            />
+          </Suspense>
           <Toaster position="bottom-right" richColors />
         </div>
       ) : (
@@ -151,42 +170,54 @@ export function DialedEngine() {
 
           {/* Direct Sibling: Scrolling Content Flex Child */}
           <main className="flex-1 overflow-y-auto overflow-x-hidden pb-24 max-w-7xl w-full mx-auto px-4 sm:px-6 pt-4">
-            {mainView === "setup" && (
-              <RideSetupView
-                bikes={bikes}
-                activeBikeId={activeBikeId}
-                onSelectBike={setActiveBikeId}
-                profile={profile}
-                onSwitchToGarage={() => setMainView("garage")}
-                onUpdateBike={updateBike}
-                onAddBike={addBike}
-              />
-            )}
+            <Suspense
+              fallback={
+                mainView === "garage" ? (
+                  <GarageSkeleton />
+                ) : mainView === "profile" ? (
+                  <ProfileSkeleton />
+                ) : (
+                  <RideSetupSkeleton />
+                )
+              }
+            >
+              {mainView === "setup" && (
+                <RideSetupView
+                  bikes={bikes}
+                  activeBikeId={activeBikeId}
+                  onSelectBike={setActiveBikeId}
+                  profile={profile}
+                  onSwitchToGarage={() => setMainView("garage")}
+                  onUpdateBike={updateBike}
+                  onAddBike={addBike}
+                />
+              )}
 
-            {mainView === "garage" && (
-              <GarageView
-                profile={profile}
-                bikes={bikes}
-                activeBikeId={activeBikeId}
-                isLoading={isSyncing}
-                onSelectActiveBike={setActiveBikeId}
-                onAddBike={addBike}
-                onUpdateBike={updateBike}
-                onDeleteBike={deleteBike}
-                onBackToSetup={() => setMainView("setup")}
-              />
-            )}
+              {mainView === "garage" && (
+                <GarageView
+                  profile={profile}
+                  bikes={bikes}
+                  activeBikeId={activeBikeId}
+                  isLoading={isSyncing}
+                  onSelectActiveBike={setActiveBikeId}
+                  onAddBike={addBike}
+                  onUpdateBike={updateBike}
+                  onDeleteBike={deleteBike}
+                  onBackToSetup={() => setMainView("setup")}
+                />
+              )}
 
-            {mainView === "profile" && (
-              <ProfileView
-                profile={profile}
-                isLoading={isSyncing}
-                onUpdateProfile={updateProfile}
-                onBackToSetup={() => setMainView("setup")}
-                onSignOut={handleSignOut}
-                onAccountDeleted={handleAccountDeleted}
-              />
-            )}
+              {mainView === "profile" && (
+                <ProfileView
+                  profile={profile}
+                  isLoading={isSyncing}
+                  onUpdateProfile={updateProfile}
+                  onBackToSetup={() => setMainView("setup")}
+                  onSignOut={handleSignOut}
+                  onAccountDeleted={handleAccountDeleted}
+                />
+              )}
+            </Suspense>
 
             {/* Desktop Footer (Inside scrollable container) */}
             <footer className="hidden md:block mt-12 py-8 text-center text-xs text-zinc-400 border-t border-zinc-800/50 font-sans">

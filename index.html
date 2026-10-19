@@ -8,9 +8,112 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;600;700;800;900&family=Geist:wght@300;400;500;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+      #static-splash {
+        position: fixed;
+        inset: 0;
+        z-index: 99999;
+        background-color: #050505;
+        color: #f4f4f5;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        align-items: center;
+        padding: 24px 24px 40px;
+        box-sizing: border-box;
+        overflow: hidden;
+        font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        pointer-events: none;
+        transition: opacity 0.5s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+      }
+      #static-splash.splash-hidden {
+        opacity: 0;
+        visibility: hidden;
+      }
+      @keyframes static-spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+      @keyframes static-pulse {
+        0%, 100% { opacity: 0.6; transform: scale(1); }
+        50% { opacity: 0.2; transform: scale(0.97); }
+      }
+      @keyframes static-bar {
+        0% { width: 15%; }
+        35% { width: 45%; }
+        70% { width: 75%; }
+        100% { width: 88%; }
+      }
+    </style>
   </head>
   <body class="bg-[#111111] text-zinc-100 min-h-screen antialiased selection:bg-lime-500/20 selection:text-lime-300 overflow-x-hidden w-full max-w-full">
+    <!-- Static Launch Screen (Renders instantly before JS bundles or Supabase SDK download) -->
+    <div id="static-splash">
+      <!-- High-Tech Ambient Lime Aura -->
+      <div style="position: absolute; top: 33%; left: 50%; transform: translate(-50%, -50%); width: 600px; height: 350px; background: radial-gradient(circle, rgba(163, 230, 53, 0.08) 0%, transparent 70%); border-radius: 9999px; filter: blur(100px); pointer-events: none;"></div>
+
+      <!-- 1. Top Header Status Indicator -->
+      <div style="position: relative; z-index: 10; width: 100%; max-width: 384px; display: flex; align-items: center; justify-content: space-between; padding-top: 8px;">
+        <div style="display: inline-flex; align-items: center; gap: 8px; padding: 4px 12px; border-radius: 9999px; background: rgba(9, 9, 11, 0.8); border: 1px solid rgba(39, 39, 42, 0.8); font-size: 10px; font-family: monospace; font-weight: 700; letter-spacing: 0.05em; color: #d4d4d8; text-transform: uppercase;">
+          <span style="width: 6px; height: 6px; border-radius: 9999px; background: #a3e635; box-shadow: 0 0 8px #a3e635;"></span>
+          <span>SETUP OS • V2.0</span>
+        </div>
+        <div style="font-size: 10px; font-family: monospace; font-weight: 500; color: #a1a1aa;">
+          CONNECTING
+        </div>
+      </div>
+
+      <!-- 2. Center Brand Emblem -->
+      <div style="position: relative; z-index: 10; display: flex; flex-direction: column; align-items: center; text-align: center; margin: auto 0;">
+        <div style="position: relative; width: 112px; height: 112px; margin-bottom: 24px; display: flex; align-items: center; justify-content: center;">
+          <!-- Outer Telemetry Ring -->
+          <svg style="position: absolute; inset: 0; width: 100%; height: 100%; animation: static-spin 10s linear infinite;" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="46" fill="none" stroke="#27272a" stroke-width="1.5" stroke-dasharray="4 6"></circle>
+            <circle cx="50" cy="50" r="46" fill="none" stroke="#a3e635" stroke-width="2" stroke-dasharray="24 260" stroke-linecap="round"></circle>
+          </svg>
+          <!-- Inner Pulsing Ring -->
+          <div style="position: absolute; inset: 8px; border-radius: 9999px; border: 1px solid rgba(163, 230, 53, 0.2); box-shadow: 0 0 30px rgba(163, 230, 53, 0.12); animation: static-pulse 2s ease-in-out infinite;"></div>
+          <!-- Logo Card -->
+          <div style="position: relative; z-index: 10; width: 64px; height: 64px; border-radius: 16px; background: rgba(9, 9, 11, 0.95); border: 1px solid #27272a; padding: 10px; box-sizing: border-box; display: flex; align-items: center; justify-content: center; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.5);">
+            <img src="/logo.png" alt="Dialed Engine" style="width: 100%; height: 100%; object-fit: contain; border-radius: 8px;" />
+          </div>
+        </div>
+
+        <h1 style="font-size: 32px; font-weight: 900; letter-spacing: -0.025em; color: #ffffff; text-transform: uppercase; margin: 0;">
+          DIALED
+        </h1>
+        <p style="font-size: 12px; font-weight: 500; letter-spacing: 0.05em; color: #a1a1aa; margin-top: 4px; text-transform: uppercase;">
+          Precision Cycling Telemetry
+        </p>
+      </div>
+
+      <!-- 3. Bottom Sleek Progress Bar -->
+      <div style="position: relative; z-index: 10; width: 100%; max-width: 384px; display: flex; flex-direction: column; gap: 12px; padding-bottom: 16px;">
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 11px; font-family: monospace;">
+          <span style="color: #a1a1aa;">BOOTING TELEMETRY KERNEL...</span>
+          <span style="color: #a3e635; font-weight: 700;">INITIALIZING</span>
+        </div>
+        <div style="width: 100%; height: 6px; background: rgba(24, 24, 27, 0.9); border-radius: 9999px; overflow: hidden; border: 1px solid rgba(39, 39, 42, 0.8); position: relative;">
+          <div style="height: 100%; background: linear-gradient(to right, #84cc16, #a3e635, #34d399); border-radius: 9999px; box-shadow: 0 0 12px rgba(163, 230, 53, 0.5); animation: static-bar 2.4s ease-out forwards;"></div>
+        </div>
+        <div style="display: flex; align-items: center; justify-content: space-between; font-size: 10px; font-family: monospace; color: #71717a; padding-top: 4px;">
+          <span>SUSPENSION SAG • TIRE PSI</span>
+          <span>CALIBRATED</span>
+        </div>
+      </div>
+    </div>
+
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script>
+      // Fallback safety timeout in case JS fails to load: dismiss static splash after 5s
+      setTimeout(function() {
+        var el = document.getElementById('static-splash');
+        if (el) {
+          el.classList.add('splash-hidden');
+          setTimeout(function() { el.remove(); }, 600);
+        }
+      }, 5000);
+    </script>
   </body>
 </html>
