@@ -44,6 +44,8 @@ function mapDbRowToBike(row: any): Bike {
     suspensionLayout,
     isEBike: Boolean(row.is_ebike),
     weightLbs: row.bike_weight_lbs != null ? Number(row.bike_weight_lbs) : null,
+    bikeCategory: row.bike_category || undefined,
+    frameMaterial: row.frame_material || undefined,
     forkModel:
       suspensionLayout === "rigid" ? "Rigid Fork" : "Fox 38 Factory Grip2",
     forkTravel: suspensionLayout === "rigid" ? 0 : 160,

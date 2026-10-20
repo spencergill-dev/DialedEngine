@@ -115,6 +115,16 @@ export function BikeDetailDialog({
                     E-BIKE
                   </span>
                 )}
+                {bike.bikeCategory && (
+                  <span className="text-[10px] uppercase font-sans font-semibold tracking-wider px-2 py-0.5 rounded bg-zinc-900 text-zinc-300">
+                    {bike.bikeCategory}
+                  </span>
+                )}
+                {bike.frameMaterial && (
+                  <span className="text-[10px] uppercase font-sans font-semibold tracking-wider px-2 py-0.5 rounded bg-zinc-900 text-zinc-300">
+                    {bike.frameMaterial}
+                  </span>
+                )}
                 {bike.weightLbs != null && (
                   <span className="text-[10px] uppercase font-mono font-semibold tracking-wider px-2 py-0.5 rounded bg-zinc-900 text-zinc-300">
                     {bike.weightLbs} LBS

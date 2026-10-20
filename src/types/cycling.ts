@@ -47,6 +47,8 @@ export interface Bike {
   category?: BikeCategory;
   isEBike: boolean;
   weightLbs?: number | null; // lbs
+  bikeCategory?: string;
+  frameMaterial?: string;
   forkModel: string;
   forkTravel: number; // 0 for rigid
   shockModel: string;

@@ -24,10 +24,16 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Combobox } from "@/components/ui/combobox";
 import { useHardwareCatalog } from "@/hooks/useHardwareCatalog";
 import { useDynamicTireCatalog } from "@/hooks/useDynamicTireCatalog";
+import { toast } from "sonner";
 import {
   calculateFullBikeSetupPressures,
   type SetupCalculationResult,
 } from "@/utils/pressureCalculator";
+import {
+  BIKE_CATEGORIES,
+  FRAME_MATERIALS,
+  estimateBikeWeight,
+} from "@/utils/weightEstimator";
 import type {
   Bike,
   BikeDiscipline,
@@ -163,8 +169,22 @@ export function BikeBuilderDialog({
   const [discipline, setDiscipline] = useState<BikeDiscipline>("mountain");
   const [suspensionLayout, setSuspensionLayout] = useState<SuspensionLayout>("full_suspension");
   const [isEBike, setIsEBike] = useState(false);
+  const [bikeCategory, setBikeCategory] = useState<string>(
+    bikeToEdit?.bikeCategory || (bikeToEdit?.isEBike ? "E-Bike (Full Power)" : "Trail")
+  );
+  const [frameMaterial, setFrameMaterial] = useState<string>(
+    bikeToEdit?.frameMaterial || "Carbon"
+  );
+  const [isWeightManuallySet, setIsWeightManuallySet] = useState<boolean>(
+    bikeToEdit?.weightLbs != null
+  );
   const [weightLbs, setWeightLbs] = useState<number | string>(
-    bikeToEdit?.weightLbs != null ? bikeToEdit.weightLbs : 32
+    bikeToEdit?.weightLbs != null
+      ? bikeToEdit.weightLbs
+      : estimateBikeWeight(
+          bikeToEdit?.bikeCategory || (bikeToEdit?.isEBike ? "E-Bike (Full Power)" : "Trail"),
+          bikeToEdit?.frameMaterial || "Carbon"
+        )
   );
 
   const [forkModel, setForkModel] = useState("Fox 38 Factory Grip2");
@@ -222,7 +242,16 @@ export function BikeBuilderDialog({
             : "rigid")
       );
       setIsEBike(bikeToEdit.isEBike);
-      setWeightLbs(bikeToEdit.weightLbs != null ? bikeToEdit.weightLbs : (bikeToEdit.isEBike ? 50 : 32));
+      const initialCat = bikeToEdit.bikeCategory || (bikeToEdit.isEBike ? "E-Bike (Full Power)" : "Trail");
+      const initialMat = bikeToEdit.frameMaterial || "Carbon";
+      setBikeCategory(initialCat);
+      setFrameMaterial(initialMat);
+      setIsWeightManuallySet(bikeToEdit.weightLbs != null);
+      setWeightLbs(
+        bikeToEdit.weightLbs != null
+          ? bikeToEdit.weightLbs
+          : estimateBikeWeight(initialCat, initialMat)
+      );
       setForkModel(bikeToEdit.forkModel);
       setForkTravel(bikeToEdit.forkTravel);
       setShockModel(bikeToEdit.shockModel);
@@ -248,7 +277,10 @@ export function BikeBuilderDialog({
       setDiscipline("mountain");
       setSuspensionLayout("full_suspension");
       setIsEBike(false);
-      setWeightLbs(32);
+      setBikeCategory("Trail");
+      setFrameMaterial("Carbon");
+      setIsWeightManuallySet(false);
+      setWeightLbs(estimateBikeWeight("Trail", "Carbon"));
       setForkModel("Fox 38 Factory Grip2");
       setForkTravel(170);
       setShockModel("Fox Float X2 Factory");
@@ -295,13 +327,64 @@ export function BikeBuilderDialog({
     }
   };
 
+  const handleCategoryChange = (val: string) => {
+    setBikeCategory(val);
+    const isElectric = val.startsWith("E-Bike");
+    setIsEBike(isElectric);
+
+    if (val === "Gravel") {
+      handleDisciplineChange("gravel");
+    } else if (val === "Downhill") {
+      setDiscipline("mountain");
+      setSuspensionLayout("full_suspension");
+      setForkTravel(200);
+      setRearWheelTravel(200);
+    } else if (val === "XC/Downcountry") {
+      setDiscipline("mountain");
+      setForkTravel((prev) => (prev > 130 ? 120 : prev));
+      setRearWheelTravel((prev) => (Number(prev) > 130 ? 120 : prev));
+    }
+
+    if (!isWeightManuallySet || weightLbs === "") {
+      const estimated = estimateBikeWeight(val, frameMaterial || "Carbon");
+      setWeightLbs(estimated);
+    }
+  };
+
+  const handleMaterialChange = (val: string) => {
+    setFrameMaterial(val);
+    if (!isWeightManuallySet || weightLbs === "") {
+      const estimated = estimateBikeWeight(bikeCategory || "Trail", val);
+      setWeightLbs(estimated);
+    }
+  };
+
+  const handleEstimateWeight = () => {
+    const cat = bikeCategory || "Trail";
+    const mat = frameMaterial || "Carbon";
+    const estimated = estimateBikeWeight(cat, mat);
+    setWeightLbs(estimated);
+    setIsWeightManuallySet(false);
+    toast.success(`Weight estimated: ${estimated} lbs`, {
+      description: `${cat} • ${mat}`,
+    });
+  };
+
   const handleEBikeToggle = (checked: boolean) => {
     setIsEBike(checked);
-    setWeightLbs((prev) => {
-      if (checked && (prev === 32 || prev === "32" || prev === "")) return 50;
-      if (!checked && (prev === 50 || prev === "50")) return 32;
-      return prev;
-    });
+    if (checked && !bikeCategory.startsWith("E-Bike")) {
+      const newCat = "E-Bike (Full Power)";
+      setBikeCategory(newCat);
+      if (!isWeightManuallySet) {
+        setWeightLbs(estimateBikeWeight(newCat, frameMaterial || "Carbon"));
+      }
+    } else if (!checked && bikeCategory.startsWith("E-Bike")) {
+      const newCat = "Trail";
+      setBikeCategory(newCat);
+      if (!isWeightManuallySet) {
+        setWeightLbs(estimateBikeWeight(newCat, frameMaterial || "Carbon"));
+      }
+    }
   };
 
   // Adjust defaults when discipline switches
@@ -598,6 +681,8 @@ export function BikeBuilderDialog({
           : (discipline as any),
       isEBike,
       weightLbs: weightLbs !== "" && !isNaN(Number(weightLbs)) ? Number(weightLbs) : null,
+      bikeCategory,
+      frameMaterial,
       forkModel: suspensionLayout === "rigid" ? "Rigid Fork" : forkModel.trim() || "Fork",
       forkTravel: suspensionLayout === "rigid" ? 0 : Number(forkTravel) || 0,
       shockModel: suspensionLayout === "full_suspension" ? shockModel.trim() : "Rigid Frame",
@@ -800,6 +885,47 @@ export function BikeBuilderDialog({
               </div>
             </div>
 
+            {/* Category & Frame Material */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-zinc-300">Bike Category</Label>
+                  <span className="text-[10px] text-zinc-500 font-sans">For weight modeling</span>
+                </div>
+                <Select value={bikeCategory} onValueChange={handleCategoryChange}>
+                  <SelectTrigger className="bg-zinc-900 ring-1 ring-white/10 text-base md:text-sm">
+                    <SelectValue placeholder="Select category..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
+                    {BIKE_CATEGORIES.map((cat) => (
+                      <SelectItem key={cat} value={cat} className="text-base md:text-sm">
+                        {cat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-1.5">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-zinc-300">Frame Material</Label>
+                  <span className="text-[10px] text-zinc-500 font-sans">Chassis layup</span>
+                </div>
+                <Select value={frameMaterial} onValueChange={handleMaterialChange}>
+                  <SelectTrigger className="bg-zinc-900 ring-1 ring-white/10 text-base md:text-sm">
+                    <SelectValue placeholder="Select material..." />
+                  </SelectTrigger>
+                  <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
+                    {FRAME_MATERIALS.map((mat) => (
+                      <SelectItem key={mat} value={mat} className="text-base md:text-sm">
+                        {mat}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
             {/* Bike Weight & E-Bike Toggle */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-stretch">
               {/* Bike Weight (lbs) */}
@@ -810,28 +936,44 @@ export function BikeBuilderDialog({
                       Bike Weight (lbs)
                     </Label>
                     <span className="text-[10px] text-zinc-400 font-mono">
-                      {isEBike ? "E-Bike ~50 lbs" : "Analog ~32 lbs"}
+                      {isWeightManuallySet ? "Custom Weight" : `Est: ${estimateBikeWeight(bikeCategory, frameMaterial)} lbs`}
                     </span>
                   </div>
                   <p className="text-[11px] text-zinc-400">
-                    Defines chassis mass for telemetry pressure calculation.
+                    Enter exact scale weight or estimate from category & material.
                   </p>
                 </div>
-                <div className="relative pt-1">
-                  <Input
-                    id="bike-weight"
-                    type="number"
-                    step="0.5"
-                    min="10"
-                    max="100"
-                    value={weightLbs}
-                    onChange={(e) => setWeightLbs(e.target.value === "" ? "" : Number(e.target.value))}
-                    placeholder={isEBike ? "50" : "32"}
-                    className="bg-zinc-900 ring-1 ring-white/10 text-base md:text-sm pr-12 h-9"
-                  />
-                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-xs text-zinc-400 font-mono pt-1">
-                    lbs
+                <div className="flex items-center gap-2 pt-1">
+                  <div className="relative flex-1">
+                    <Input
+                      id="bike-weight"
+                      type="number"
+                      step="0.5"
+                      min="10"
+                      max="100"
+                      value={weightLbs}
+                      onChange={(e) => {
+                        setIsWeightManuallySet(true);
+                        setWeightLbs(e.target.value === "" ? "" : Number(e.target.value));
+                      }}
+                      placeholder={String(estimateBikeWeight(bikeCategory, frameMaterial))}
+                      className="bg-zinc-900 ring-1 ring-white/10 text-base md:text-sm pr-12 h-9"
+                    />
+                    <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-xs text-zinc-400 font-mono">
+                      lbs
+                    </div>
                   </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleEstimateWeight}
+                    className="h-9 px-2.5 text-xs font-semibold gap-1.5 bg-zinc-900 hover:bg-zinc-800 text-lime-400 border-white/10 shrink-0"
+                    title="Estimate weight based on Category & Material"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-lime-400" />
+                    <span>Estimate</span>
+                  </Button>
                 </div>
               </div>
 
