@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS public.bikes (
     frame_size TEXT NOT NULL,
     category TEXT NOT NULL CHECK (category IN ('full_suspension', 'hardtail', 'gravel', 'road', 'rigid')),
     is_ebike BOOLEAN NOT NULL DEFAULT FALSE,
+    bike_weight_lbs NUMERIC,
     fork_model TEXT,
     fork_travel INTEGER NOT NULL DEFAULT 0 CHECK (fork_travel >= 0 AND fork_travel <= 220),
     shock_model TEXT,

@@ -42,8 +42,15 @@ export function BikeDetailDialog({
   if (!bike) return null;
 
   const handleCalculate = () => {
+    const defaultBikeWeight = bike.isEBike ? 50 : 32;
+    const resolvedBikeWeight =
+      bike.weightLbs != null && !isNaN(Number(bike.weightLbs))
+        ? Number(bike.weightLbs)
+        : defaultBikeWeight;
+
     const res = calculateFullBikeSetupPressures({
       riderWeightLbs: riderWeight || 175,
+      bikeWeightLbs: resolvedBikeWeight,
       isEBike: bike.isEBike,
       frontTire: {
         width: bike.frontTire.width,
@@ -106,6 +113,11 @@ export function BikeDetailDialog({
                   <span className="text-[10px] px-2 py-0.5 rounded bg-zinc-900 text-amber-300 flex items-center gap-1 font-sans font-semibold uppercase tracking-wider">
                     <Zap className="w-2.5 h-2.5 text-amber-400" />
                     E-BIKE
+                  </span>
+                )}
+                {bike.weightLbs != null && (
+                  <span className="text-[10px] uppercase font-mono font-semibold tracking-wider px-2 py-0.5 rounded bg-zinc-900 text-zinc-300">
+                    {bike.weightLbs} LBS
                   </span>
                 )}
               </div>
@@ -301,7 +313,11 @@ export function BikeDetailDialog({
           {calculatedSetup && (
             <div className="p-3.5 rounded-xl bg-lime-950/20 border border-lime-500/30 space-y-2.5">
               <div className="flex items-center justify-between text-[10px] text-zinc-400 font-mono">
-                <span>Rider: {riderWeight || 175} lbs</span>
+                <div className="flex items-center gap-2">
+                  <span>Rider: {riderWeight || 175} lbs</span>
+                  <span>•</span>
+                  <span>Bike: {bike.weightLbs != null ? `${bike.weightLbs} lbs` : (bike.isEBike ? "50 lbs" : "32 lbs")}</span>
+                </div>
                 <span>Base: {calculatedSetup.basePsi.toFixed(1)} PSI</span>
               </div>
               <div className="grid grid-cols-2 gap-3">

@@ -163,6 +163,9 @@ export function BikeBuilderDialog({
   const [discipline, setDiscipline] = useState<BikeDiscipline>("mountain");
   const [suspensionLayout, setSuspensionLayout] = useState<SuspensionLayout>("full_suspension");
   const [isEBike, setIsEBike] = useState(false);
+  const [weightLbs, setWeightLbs] = useState<number | string>(
+    bikeToEdit?.weightLbs != null ? bikeToEdit.weightLbs : 32
+  );
 
   const [forkModel, setForkModel] = useState("Fox 38 Factory Grip2");
   const [forkTravel, setForkTravel] = useState(170);
@@ -219,6 +222,7 @@ export function BikeBuilderDialog({
             : "rigid")
       );
       setIsEBike(bikeToEdit.isEBike);
+      setWeightLbs(bikeToEdit.weightLbs != null ? bikeToEdit.weightLbs : (bikeToEdit.isEBike ? 50 : 32));
       setForkModel(bikeToEdit.forkModel);
       setForkTravel(bikeToEdit.forkTravel);
       setShockModel(bikeToEdit.shockModel);
@@ -244,6 +248,7 @@ export function BikeBuilderDialog({
       setDiscipline("mountain");
       setSuspensionLayout("full_suspension");
       setIsEBike(false);
+      setWeightLbs(32);
       setForkModel("Fox 38 Factory Grip2");
       setForkTravel(170);
       setShockModel("Fox Float X2 Factory");
@@ -288,6 +293,15 @@ export function BikeBuilderDialog({
         compound: frontTire.compound,
       }));
     }
+  };
+
+  const handleEBikeToggle = (checked: boolean) => {
+    setIsEBike(checked);
+    setWeightLbs((prev) => {
+      if (checked && (prev === 32 || prev === "32" || prev === "")) return 50;
+      if (!checked && (prev === 50 || prev === "50")) return 32;
+      return prev;
+    });
   };
 
   // Adjust defaults when discipline switches
@@ -452,8 +466,15 @@ export function BikeBuilderDialog({
   );
 
   const handleCalculateSetup = () => {
+    const defaultBikeWeight = isEBike ? 50 : 32;
+    const resolvedBikeWeight =
+      weightLbs !== "" && !isNaN(Number(weightLbs))
+        ? Number(weightLbs)
+        : defaultBikeWeight;
+
     const result = calculateFullBikeSetupPressures({
       riderWeightLbs: riderWeightInput || 175,
+      bikeWeightLbs: resolvedBikeWeight,
       isEBike,
       frontTire: {
         width: frontTire.width,
@@ -568,6 +589,7 @@ export function BikeBuilderDialog({
             : "hardtail"
           : (discipline as any),
       isEBike,
+      weightLbs: weightLbs !== "" && !isNaN(Number(weightLbs)) ? Number(weightLbs) : null,
       forkModel: suspensionLayout === "rigid" ? "Rigid Fork" : forkModel.trim() || "Fork",
       forkTravel: suspensionLayout === "rigid" ? 0 : Number(forkTravel) || 0,
       shockModel: suspensionLayout === "full_suspension" ? shockModel.trim() : "Rigid Frame",
@@ -770,21 +792,57 @@ export function BikeBuilderDialog({
               </div>
             </div>
 
-            {/* E-Bike Toggle */}
-            <div className="flex items-center justify-between p-3.5 rounded-xl bg-zinc-900/60 ring-1 ring-white/5">
-              <div className="space-y-0.5">
-                <Label htmlFor="ebike-mode" className="text-xs text-zinc-200 cursor-pointer font-semibold">
-                  E-Bike Motor & Battery
-                </Label>
-                <p className="text-[11px] text-zinc-500">
-                  Adds a +2.5 PSI offset to accommodate motor and battery chassis mass.
+            {/* Bike Weight & E-Bike Toggle */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 items-stretch">
+              {/* Bike Weight (lbs) */}
+              <div className="space-y-1.5 p-3.5 rounded-xl bg-zinc-900/60 ring-1 ring-white/5 flex flex-col justify-between">
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="bike-weight" className="text-xs text-zinc-200 cursor-pointer font-semibold">
+                      Bike Weight (lbs)
+                    </Label>
+                    <span className="text-[10px] text-zinc-400 font-mono">
+                      {isEBike ? "E-Bike ~50 lbs" : "Analog ~32 lbs"}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-zinc-400">
+                    Defines chassis mass for telemetry pressure calculation.
+                  </p>
+                </div>
+                <div className="relative pt-1">
+                  <Input
+                    id="bike-weight"
+                    type="number"
+                    step="0.5"
+                    min="10"
+                    max="100"
+                    value={weightLbs}
+                    onChange={(e) => setWeightLbs(e.target.value === "" ? "" : Number(e.target.value))}
+                    placeholder={isEBike ? "50" : "32"}
+                    className="bg-zinc-900 ring-1 ring-white/10 text-base md:text-sm pr-12 h-9"
+                  />
+                  <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none text-xs text-zinc-400 font-mono pt-1">
+                    lbs
+                  </div>
+                </div>
+              </div>
+
+              {/* E-Bike Toggle */}
+              <div className="flex flex-col justify-between p-3.5 rounded-xl bg-zinc-900/60 ring-1 ring-white/5">
+                <div className="flex items-center justify-between">
+                  <Label htmlFor="ebike-mode" className="text-xs text-zinc-200 cursor-pointer font-semibold">
+                    E-Bike Motor & Battery
+                  </Label>
+                  <Switch
+                    id="ebike-mode"
+                    checked={isEBike}
+                    onCheckedChange={handleEBikeToggle}
+                  />
+                </div>
+                <p className="text-[11px] text-zinc-400 mt-2">
+                  Adds telemetry offset to accommodate motor and battery chassis mass.
                 </p>
               </div>
-              <Switch
-                id="ebike-mode"
-                checked={isEBike}
-                onCheckedChange={setIsEBike}
-              />
             </div>
           </div>
 
@@ -1207,9 +1265,11 @@ export function BikeBuilderDialog({
                         <span className="w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_8px_rgba(163,230,53,0.8)]" />
                         <span>Recommended Baseline Pressures</span>
                       </div>
-                      <span className="text-[10px] font-mono text-zinc-400">
-                        Base: {calculatedSetup.basePsi.toFixed(1)} PSI
-                      </span>
+                      <div className="flex items-center gap-2 text-[10px] font-mono text-zinc-400">
+                        <span>Bike: {weightLbs !== "" ? `${weightLbs} lbs` : (isEBike ? "50 lbs" : "32 lbs")}</span>
+                        <span>•</span>
+                        <span>Base: {calculatedSetup.basePsi.toFixed(1)} PSI</span>
+                      </div>
                     </div>
 
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">

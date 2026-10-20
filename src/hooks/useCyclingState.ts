@@ -42,7 +42,8 @@ function mapDbRowToBike(row: any): Bike {
     frameSize: "L",
     discipline,
     suspensionLayout,
-    isEBike: false,
+    isEBike: Boolean(row.is_ebike),
+    weightLbs: row.bike_weight_lbs != null ? Number(row.bike_weight_lbs) : null,
     forkModel:
       suspensionLayout === "rigid" ? "Rigid Fork" : "Fox 38 Factory Grip2",
     forkTravel: suspensionLayout === "rigid" ? 0 : 160,
@@ -438,6 +439,7 @@ export function useCyclingState(
             discipline: newBike.discipline,
             suspension_layout: newBike.suspensionLayout,
             wheel_size: newBike.frontTire?.wheelSize || '29"',
+            bike_weight_lbs: newBike.weightLbs != null ? Number(newBike.weightLbs) : null,
             rear_shock_stroke: newBike.rearShockStroke ?? null,
             rear_wheel_travel: newBike.rearWheelTravel ?? null,
             front_tire_manufacturer: newBike.frontTire?.manufacturer || null,
@@ -527,6 +529,8 @@ export function useCyclingState(
           payload.rear_shock_stroke = updated.rearShockStroke;
         if (updated.rearWheelTravel !== undefined)
           payload.rear_wheel_travel = updated.rearWheelTravel;
+        if (updated.weightLbs !== undefined)
+          payload.bike_weight_lbs = updated.weightLbs != null ? Number(updated.weightLbs) : null;
         if (updated.frontTire?.manufacturer !== undefined)
           payload.front_tire_manufacturer = updated.frontTire.manufacturer;
         if (updated.frontTire?.model !== undefined)

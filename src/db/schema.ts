@@ -84,6 +84,7 @@ export interface Database {
           suspension_layout?: SuspensionLayout;
           category: BikeCategory;
           is_ebike: boolean;
+          bike_weight_lbs?: number | null;
           fork_model: string | null;
           fork_travel: number;
           shock_model: string | null;
@@ -115,6 +116,7 @@ export interface Database {
           suspension_layout?: SuspensionLayout;
           category: BikeCategory;
           is_ebike?: boolean;
+          bike_weight_lbs?: number | null;
           fork_model?: string | null;
           fork_travel?: number;
           shock_model?: string | null;
@@ -146,6 +148,7 @@ export interface Database {
           suspension_layout?: SuspensionLayout;
           category?: BikeCategory;
           is_ebike?: boolean;
+          bike_weight_lbs?: number | null;
           fork_model?: string | null;
           fork_travel?: number;
           shock_model?: string | null;
@@ -446,6 +449,7 @@ export interface Database {
           discipline: string | null;
           suspension_layout: string | null;
           wheel_size: string | null;
+          bike_weight_lbs?: number | null;
           rear_shock_stroke?: number | null;
           rear_wheel_travel?: number | null;
           front_tire_manufacturer?: string | null;
@@ -470,6 +474,7 @@ export interface Database {
           discipline?: string | null;
           suspension_layout?: string | null;
           wheel_size?: string | null;
+          bike_weight_lbs?: number | null;
           rear_shock_stroke?: number | null;
           rear_wheel_travel?: number | null;
           front_tire_manufacturer?: string | null;
@@ -494,6 +499,7 @@ export interface Database {
           discipline?: string | null;
           suspension_layout?: string | null;
           wheel_size?: string | null;
+          bike_weight_lbs?: number | null;
           rear_shock_stroke?: number | null;
           rear_wheel_travel?: number | null;
           front_tire_manufacturer?: string | null;

@@ -46,6 +46,7 @@ export interface Bike {
   suspensionLayout: SuspensionLayout;
   category?: BikeCategory;
   isEBike: boolean;
+  weightLbs?: number | null; // lbs
   forkModel: string;
   forkTravel: number; // 0 for rigid
   shockModel: string;
