@@ -280,6 +280,7 @@ export function GarageView({
             bike={activeDetailBike}
             isActive={activeDetailBike?.id === activeBikeId}
             canDelete={bikes.length > 1}
+            riderWeight={profile?.weight}
             onSelectActiveBike={(id) => {
               onSelectActiveBike(id);
               toast.success("Active ride updated", {
@@ -300,6 +301,7 @@ export function GarageView({
             onOpenChange={setBuilderOpen}
             bikeToEdit={bikeToEdit}
             onSave={handleSave}
+            riderWeight={profile?.weight}
           />
         </Suspense>
       )}

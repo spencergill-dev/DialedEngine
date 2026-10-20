@@ -1,4 +1,5 @@
-import { Bike as BikeIcon, Edit3, Trash2, Zap, Layers } from "lucide-react";
+import { useState } from "react";
+import { Bike as BikeIcon, Edit3, Trash2, Zap, Layers, Gauge, Sparkles } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -8,6 +9,10 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import type { Bike } from "@/types/cycling";
+import {
+  calculateFullBikeSetupPressures,
+  type SetupCalculationResult,
+} from "@/utils/pressureCalculator";
 
 interface BikeDetailDialogProps {
   open: boolean;
@@ -15,6 +20,7 @@ interface BikeDetailDialogProps {
   bike: Bike | null;
   isActive: boolean;
   canDelete: boolean;
+  riderWeight?: number | null;
   onSelectActiveBike: (id: string) => void;
   onEdit: (bike: Bike) => void;
   onDelete: (bike: Bike) => void;
@@ -26,11 +32,32 @@ export function BikeDetailDialog({
   bike,
   isActive,
   canDelete,
+  riderWeight,
   onSelectActiveBike,
   onEdit,
   onDelete,
 }: BikeDetailDialogProps) {
+  const [calculatedSetup, setCalculatedSetup] = useState<SetupCalculationResult | null>(null);
+
   if (!bike) return null;
+
+  const handleCalculate = () => {
+    const res = calculateFullBikeSetupPressures({
+      riderWeightLbs: riderWeight || 175,
+      isEBike: bike.isEBike,
+      frontTire: {
+        width: bike.frontTire.width,
+        casing: bike.frontTire.casing,
+        hasInsert: bike.frontTire.hasInsert,
+      },
+      rearTire: {
+        width: bike.rearTire.width,
+        casing: bike.rearTire.casing,
+        hasInsert: bike.rearTire.hasInsert,
+      },
+    });
+    setCalculatedSetup(res);
+  };
 
   const displayBrand =
     bike.brand === "Custom" ? bike.customBrand || "Custom" : bike.brand;
@@ -250,6 +277,70 @@ export function BikeDetailDialog({
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Telemetry Tire Pressure Output */}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h4 className="text-[11px] font-sans font-bold uppercase tracking-wider text-lime-400 flex items-center gap-1.5">
+              <Gauge className="w-3.5 h-3.5 text-lime-400" />
+              <span>Telemetry Pressure Setup</span>
+            </h4>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleCalculate}
+              className="h-7 text-xs text-lime-400 hover:text-lime-300 hover:bg-lime-950/40 gap-1.5 px-2 font-sans font-bold"
+            >
+              <Sparkles className="w-3 h-3" />
+              <span>{calculatedSetup ? "Recalculate" : "Calculate Setup"}</span>
+            </Button>
+          </div>
+
+          {calculatedSetup && (
+            <div className="p-3.5 rounded-xl bg-lime-950/20 border border-lime-500/30 space-y-2.5">
+              <div className="flex items-center justify-between text-[10px] text-zinc-400 font-mono">
+                <span>Rider: {riderWeight || 175} lbs</span>
+                <span>Base: {calculatedSetup.basePsi.toFixed(1)} PSI</span>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-2.5 rounded-lg bg-zinc-900/80 border border-white/5 space-y-1">
+                  <span className="text-[10px] text-zinc-400 font-sans uppercase font-bold tracking-wider block">
+                    Recommended Front
+                  </span>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-xl font-mono font-black text-white">
+                      {calculatedSetup.frontPsi.toFixed(1)}
+                    </span>
+                    <span className="text-xs font-mono font-bold text-lime-400">PSI</span>
+                    {calculatedSetup.frontPsi === 15.0 && (
+                      <span className="text-[9px] font-sans font-semibold text-amber-400 px-1 rounded bg-amber-950/60">
+                        FLOOR
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-lg bg-zinc-900/80 border border-white/5 space-y-1">
+                  <span className="text-[10px] text-zinc-400 font-sans uppercase font-bold tracking-wider block">
+                    Recommended Rear
+                  </span>
+                  <div className="flex items-baseline gap-1.5">
+                    <span className="text-xl font-mono font-black text-white">
+                      {calculatedSetup.rearPsi.toFixed(1)}
+                    </span>
+                    <span className="text-xs font-mono font-bold text-lime-400">PSI</span>
+                    {calculatedSetup.rearPsi === 15.0 && (
+                      <span className="text-[9px] font-sans font-semibold text-amber-400 px-1 rounded bg-amber-950/60">
+                        FLOOR
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Modal Actions */}

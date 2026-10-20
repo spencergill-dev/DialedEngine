@@ -415,6 +415,7 @@ export function RideSetupView({
             open={isCreateBikeOpen}
             onOpenChange={setIsCreateBikeOpen}
             bikeToEdit={null}
+            riderWeight={profile?.weight}
             onSave={(newBike) => {
               onAddBike?.(newBike);
               setIsCreateBikeOpen(false);
@@ -1105,6 +1106,7 @@ export function RideSetupView({
           open={isEditBikeOpen}
           onOpenChange={setIsEditBikeOpen}
           bikeToEdit={currentBike}
+          riderWeight={profile?.weight}
           onSave={(bikeData) => {
             if (onUpdateBike && currentBike) {
               onUpdateBike(currentBike.id, bikeData);

@@ -260,6 +260,75 @@ export interface Database {
           [key: string]: any;
         };
       };
+      tire_brands: {
+        Row: {
+          id: string | number;
+          name: string;
+          created_at?: string;
+          [key: string]: any;
+        };
+        Insert: {
+          id?: string | number;
+          name: string;
+          created_at?: string;
+          [key: string]: any;
+        };
+        Update: {
+          id?: string | number;
+          name?: string;
+          [key: string]: any;
+        };
+      };
+      tire_models: {
+        Row: {
+          id: string | number;
+          brand_id: string | number;
+          name: string;
+          created_at?: string;
+          [key: string]: any;
+        };
+        Insert: {
+          id?: string | number;
+          brand_id: string | number;
+          name: string;
+          created_at?: string;
+          [key: string]: any;
+        };
+        Update: {
+          id?: string | number;
+          brand_id?: string | number;
+          name?: string;
+          [key: string]: any;
+        };
+      };
+      tire_specs: {
+        Row: {
+          id: string | number;
+          model_id: string | number;
+          casing?: string | null;
+          compound?: string | null;
+          width?: string | null;
+          created_at?: string;
+          [key: string]: any;
+        };
+        Insert: {
+          id?: string | number;
+          model_id: string | number;
+          casing?: string | null;
+          compound?: string | null;
+          width?: string | null;
+          created_at?: string;
+          [key: string]: any;
+        };
+        Update: {
+          id?: string | number;
+          model_id?: string | number;
+          casing?: string | null;
+          compound?: string | null;
+          width?: string | null;
+          [key: string]: any;
+        };
+      };
       bike_models: {
         Row: {
           id?: string | number;

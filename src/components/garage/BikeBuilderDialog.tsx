@@ -1,5 +1,6 @@
 import { useState, useEffect, type FormEvent } from "react";
-import { Camera, CheckCircle2 } from "lucide-react";
+import { Camera, CheckCircle2, Gauge, Sparkles } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   Dialog,
   DialogContent,
@@ -22,6 +23,11 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Combobox } from "@/components/ui/combobox";
 import { useHardwareCatalog } from "@/hooks/useHardwareCatalog";
+import { useDynamicTireCatalog } from "@/hooks/useDynamicTireCatalog";
+import {
+  calculateFullBikeSetupPressures,
+  type SetupCalculationResult,
+} from "@/utils/pressureCalculator";
 import type {
   Bike,
   BikeDiscipline,
@@ -30,10 +36,6 @@ import type {
   TireSetup,
 } from "@/types/cycling";
 import {
-  getTireManufacturers,
-  getTireModels,
-  getTireCasings,
-  getTireCompounds,
   DEFAULT_TIRE_CASINGS,
   DEFAULT_TIRE_COMPOUNDS,
   TIRE_MANUFACTURERS,
@@ -48,6 +50,7 @@ interface BikeBuilderDialogProps {
   onOpenChange: (open: boolean) => void;
   bikeToEdit: Bike | null;
   onSave: (bikeData: Omit<Bike, "id">) => void;
+  riderWeight?: number | null;
 }
 
 const MODEL_YEARS = [
@@ -142,6 +145,7 @@ export function BikeBuilderDialog({
   onOpenChange,
   bikeToEdit,
   onSave,
+  riderWeight,
 }: BikeBuilderDialogProps) {
   const {
     brands: catalogBrands,
@@ -169,6 +173,16 @@ export function BikeBuilderDialog({
   const [frontTire, setFrontTire] = useState<TireSetup>(DEFAULT_FRONT_TIRE);
   const [rearTire, setRearTire] = useState<TireSetup>(DEFAULT_REAR_TIRE);
   const [sameAsFront, setSameAsFront] = useState(false);
+
+  // Telemetry Engine state
+  const [riderWeightInput, setRiderWeightInput] = useState<number>(riderWeight || 175);
+  const [calculatedSetup, setCalculatedSetup] = useState<SetupCalculationResult | null>(null);
+
+  useEffect(() => {
+    if (riderWeight) {
+      setRiderWeightInput(riderWeight);
+    }
+  }, [riderWeight]);
 
   const brandKey = brand.trim().toLowerCase();
   const brandSpecificModels = modelsByBrand[brandKey];
@@ -410,15 +424,50 @@ export function BikeBuilderDialog({
   const frontWidthOptions = getTireWidthsForWheelSize(frontTire.wheelSize);
   const rearWidthOptions = getTireWidthsForWheelSize(rearTire.wheelSize);
 
-  const frontManufacturerOptions = getTireManufacturers();
-  const frontModelOptions = getTireModels(frontTire.manufacturer);
-  const frontCasingOptions = getTireCasings(frontTire.manufacturer, frontTire.model);
-  const frontCompoundOptions = getTireCompounds(frontTire.manufacturer, frontTire.model);
+  const frontCatalog = useDynamicTireCatalog(
+    frontTire.manufacturer,
+    frontTire.model
+  );
+  const rearCatalog = useDynamicTireCatalog(
+    sameAsFront ? frontTire.manufacturer : rearTire.manufacturer,
+    sameAsFront ? frontTire.model : rearTire.model
+  );
 
-  const rearManufacturerOptions = getTireManufacturers();
-  const rearModelOptions = getTireModels(rearTire.manufacturer);
-  const rearCasingOptions = getTireCasings(rearTire.manufacturer, rearTire.model);
-  const rearCompoundOptions = getTireCompounds(rearTire.manufacturer, rearTire.model);
+  const frontManufacturerOptions = frontCatalog.brands;
+  const frontModelOptions = frontCatalog.getModelsForBrand(frontTire.manufacturer);
+  const frontCasingOptions = frontCatalog.getCasingsForModel(frontTire.manufacturer, frontTire.model);
+  const frontCompoundOptions = frontCatalog.getCompoundsForModel(frontTire.manufacturer, frontTire.model);
+
+  const rearManufacturerOptions = rearCatalog.brands;
+  const rearModelOptions = rearCatalog.getModelsForBrand(
+    sameAsFront ? frontTire.manufacturer : rearTire.manufacturer
+  );
+  const rearCasingOptions = rearCatalog.getCasingsForModel(
+    sameAsFront ? frontTire.manufacturer : rearTire.manufacturer,
+    sameAsFront ? frontTire.model : rearTire.model
+  );
+  const rearCompoundOptions = rearCatalog.getCompoundsForModel(
+    sameAsFront ? frontTire.manufacturer : rearTire.manufacturer,
+    sameAsFront ? frontTire.model : rearTire.model
+  );
+
+  const handleCalculateSetup = () => {
+    const result = calculateFullBikeSetupPressures({
+      riderWeightLbs: riderWeightInput || 175,
+      isEBike,
+      frontTire: {
+        width: frontTire.width,
+        casing: frontTire.casing,
+        hasInsert: frontTire.hasInsert,
+      },
+      rearTire: {
+        width: sameAsFront ? frontTire.width : rearTire.width,
+        casing: sameAsFront ? frontTire.casing : rearTire.casing,
+        hasInsert: rearTire.hasInsert,
+      },
+    });
+    setCalculatedSetup(result);
+  };
 
   // Cascading reset handlers for Front Tire
   const handleFrontManufacturerChange = (val: string) => {
@@ -1103,6 +1152,152 @@ export function BikeBuilderDialog({
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Telemetry Pressure Calculation Engine */}
+            <div className="pt-3 border-t border-white/5 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <Gauge className="w-3.5 h-3.5 text-lime-400" />
+                    <h5 className="text-xs font-bold text-zinc-200 uppercase tracking-wider font-sans">
+                      Telemetry Pressure Engine
+                    </h5>
+                  </div>
+                  <p className="text-[11px] text-zinc-400">
+                    Live mathematical tire pressure modeling based on rider weight, chassis, casing, and inserts.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1.5 bg-zinc-950 px-2 py-1 rounded-lg border border-white/10">
+                    <span className="text-[10px] text-zinc-400 font-sans font-medium uppercase">Rider:</span>
+                    <input
+                      type="number"
+                      min={80}
+                      max={350}
+                      value={riderWeightInput}
+                      onChange={(e) => setRiderWeightInput(Number(e.target.value))}
+                      className="w-12 bg-transparent text-right font-mono text-xs font-bold text-white focus:outline-none"
+                    />
+                    <span className="text-[10px] text-zinc-500 font-mono">lbs</span>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={handleCalculateSetup}
+                    className="h-8 px-3 rounded-lg bg-lime-400 hover:bg-lime-300 text-black font-sans font-bold text-xs gap-1.5 shadow-sm"
+                  >
+                    <Sparkles className="w-3.5 h-3.5 text-black" />
+                    <span>Calculate Setup</span>
+                  </Button>
+                </div>
+              </div>
+
+              {/* Calculated Setup Card */}
+              <AnimatePresence>
+                {calculatedSetup && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: "auto" }}
+                    exit={{ opacity: 0, height: 0 }}
+                    className="p-3.5 rounded-xl bg-lime-950/20 border border-lime-500/30 space-y-3"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5 font-bold text-lime-400 text-[11px] uppercase tracking-wider">
+                        <span className="w-1.5 h-1.5 rounded-full bg-lime-400 shadow-[0_0_8px_rgba(163,230,53,0.8)]" />
+                        <span>Recommended Baseline Pressures</span>
+                      </div>
+                      <span className="text-[10px] font-mono text-zinc-400">
+                        Base: {calculatedSetup.basePsi.toFixed(1)} PSI
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {/* Front Tire Recommendation */}
+                      <div className="p-3 rounded-lg bg-zinc-950/80 border border-white/5 space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px] text-zinc-400 font-medium">
+                          <span className="font-sans font-bold text-zinc-200">Front Tire</span>
+                          <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-300">
+                            {frontTire.width}
+                          </span>
+                        </div>
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-2xl font-mono font-black text-white">
+                            {calculatedSetup.frontPsi.toFixed(1)}
+                          </span>
+                          <span className="text-xs font-mono font-bold text-lime-400">PSI</span>
+                          {calculatedSetup.frontPsi === 15.0 && (
+                            <span className="text-[10px] font-sans font-semibold text-amber-400 px-1.5 py-0.2 rounded bg-amber-950/50">
+                              SAFETY FLOOR
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-1 text-[10px] text-zinc-400 pt-0.5 font-mono">
+                          <span className="px-1.5 py-0.5 rounded bg-zinc-900">
+                            Axle: {calculatedSetup.frontModifiers.axleBias > 0 ? `+${calculatedSetup.frontModifiers.axleBias}` : calculatedSetup.frontModifiers.axleBias}
+                          </span>
+                          {calculatedSetup.frontModifiers.volume !== 0 && (
+                            <span className="px-1.5 py-0.5 rounded bg-zinc-900">
+                              Vol: {calculatedSetup.frontModifiers.volume > 0 ? `+${calculatedSetup.frontModifiers.volume}` : calculatedSetup.frontModifiers.volume}
+                            </span>
+                          )}
+                          {calculatedSetup.frontModifiers.casing !== 0 && (
+                            <span className="px-1.5 py-0.5 rounded bg-zinc-900">
+                              Casing: {calculatedSetup.frontModifiers.casing > 0 ? `+${calculatedSetup.frontModifiers.casing}` : calculatedSetup.frontModifiers.casing}
+                            </span>
+                          )}
+                          {calculatedSetup.frontModifiers.insert !== 0 && (
+                            <span className="px-1.5 py-0.5 rounded bg-zinc-900 text-lime-400">
+                              Insert: {calculatedSetup.frontModifiers.insert}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Rear Tire Recommendation */}
+                      <div className="p-3 rounded-lg bg-zinc-950/80 border border-white/5 space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px] text-zinc-400 font-medium">
+                          <span className="font-sans font-bold text-zinc-200">Rear Tire</span>
+                          <span className="text-[10px] uppercase font-mono px-1.5 py-0.5 rounded bg-zinc-900 text-zinc-300">
+                            {sameAsFront ? frontTire.width : rearTire.width}
+                          </span>
+                        </div>
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-2xl font-mono font-black text-white">
+                            {calculatedSetup.rearPsi.toFixed(1)}
+                          </span>
+                          <span className="text-xs font-mono font-bold text-lime-400">PSI</span>
+                          {calculatedSetup.rearPsi === 15.0 && (
+                            <span className="text-[10px] font-sans font-semibold text-amber-400 px-1.5 py-0.2 rounded bg-amber-950/50">
+                              SAFETY FLOOR
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-1 text-[10px] text-zinc-400 pt-0.5 font-mono">
+                          <span className="px-1.5 py-0.5 rounded bg-zinc-900">
+                            Axle: +{calculatedSetup.rearModifiers.axleBias}
+                          </span>
+                          {calculatedSetup.rearModifiers.volume !== 0 && (
+                            <span className="px-1.5 py-0.5 rounded bg-zinc-900">
+                              Vol: {calculatedSetup.rearModifiers.volume > 0 ? `+${calculatedSetup.rearModifiers.volume}` : calculatedSetup.rearModifiers.volume}
+                            </span>
+                          )}
+                          {calculatedSetup.rearModifiers.casing !== 0 && (
+                            <span className="px-1.5 py-0.5 rounded bg-zinc-900">
+                              Casing: {calculatedSetup.rearModifiers.casing > 0 ? `+${calculatedSetup.rearModifiers.casing}` : calculatedSetup.rearModifiers.casing}
+                            </span>
+                          )}
+                          {calculatedSetup.rearModifiers.insert !== 0 && (
+                            <span className="px-1.5 py-0.5 rounded bg-zinc-900 text-lime-400">
+                              Insert: {calculatedSetup.rearModifiers.insert}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
 
