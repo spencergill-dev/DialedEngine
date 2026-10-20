@@ -435,9 +435,6 @@ export function BikeBuilderDialog({
     });
   };
 
-  const frontWidthOptions = getTireWidthsForWheelSize(frontTire.wheelSize);
-  const rearWidthOptions = getTireWidthsForWheelSize(rearTire.wheelSize);
-
   const frontCatalog = useDynamicTireCatalog(
     frontTire.manufacturer,
     frontTire.model
@@ -445,6 +442,17 @@ export function BikeBuilderDialog({
   const rearCatalog = useDynamicTireCatalog(
     sameAsFront ? frontTire.manufacturer : rearTire.manufacturer,
     sameAsFront ? frontTire.model : rearTire.model
+  );
+
+  const frontWidthOptions = frontCatalog.getWidthsForModel(
+    frontTire.manufacturer,
+    frontTire.model,
+    getTireWidthsForWheelSize(frontTire.wheelSize)
+  );
+  const rearWidthOptions = rearCatalog.getWidthsForModel(
+    sameAsFront ? frontTire.manufacturer : rearTire.manufacturer,
+    sameAsFront ? frontTire.model : rearTire.model,
+    getTireWidthsForWheelSize(rearTire.wheelSize)
   );
 
   const frontManufacturerOptions = frontCatalog.brands;
@@ -907,23 +915,15 @@ export function BikeBuilderDialog({
 
                 <div className="space-y-1">
                   <Label className="text-[11px] text-zinc-400">Width</Label>
-                  <Select
+                  <Combobox
                     value={frontTire.width}
-                    onValueChange={(val) =>
+                    onChange={(val) =>
                       setFrontTire((prev) => ({ ...prev, width: val }))
                     }
-                  >
-                    <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm">
-                      <SelectValue placeholder="Select width" />
-                    </SelectTrigger>
-                    <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
-                      {frontWidthOptions.map((w) => (
-                        <SelectItem key={w} value={w} className="text-base md:text-sm">
-                          {w}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    options={frontWidthOptions}
+                    placeholder="e.g. 2.4&quot;, 2.5&quot; WT, 40mm"
+                    className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
+                  />
                 </div>
 
                 <div className="space-y-1">
@@ -1097,23 +1097,15 @@ export function BikeBuilderDialog({
 
                   <div className="space-y-1">
                     <Label className="text-[11px] text-zinc-400">Width</Label>
-                    <Select
+                    <Combobox
                       value={rearTire.width}
-                      onValueChange={(val) =>
+                      onChange={(val) =>
                         setRearTire((prev) => ({ ...prev, width: val }))
                       }
-                    >
-                      <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm">
-                        <SelectValue placeholder="Select width" />
-                      </SelectTrigger>
-                      <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
-                        {rearWidthOptions.map((w) => (
-                          <SelectItem key={w} value={w} className="text-base md:text-sm">
-                            {w}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      options={rearWidthOptions}
+                      placeholder="e.g. 2.4&quot;, 2.5&quot; WT, 40mm"
+                      className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm"
+                    />
                   </div>
 
                   <div className="space-y-1">

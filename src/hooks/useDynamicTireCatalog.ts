@@ -339,11 +339,56 @@ export function useDynamicTireCatalog(
     [activeModel, dbSpecs]
   );
 
+  // Helper: compute dependent widths for any brand + model
+  const getWidthsForModel = useCallback(
+    (_brand?: string, model?: string, defaultWidths: string[] = []): string[] => {
+      if (!model) return defaultWidths;
+
+      const modelTrimmed = model.trim().toLowerCase();
+      let matchedSpecs: SpecRecord[] | undefined;
+
+      if (
+        activeModel &&
+        activeModel.trim().toLowerCase() === modelTrimmed &&
+        dbSpecs.length > 0
+      ) {
+        matchedSpecs = dbSpecs;
+      } else {
+        for (const [mId, specs] of cachedSpecsByModelId.entries()) {
+          for (const mList of cachedModelsByBrandId.values()) {
+            if (
+              mList.some(
+                (m) => m.id === mId && m.name.trim().toLowerCase() === modelTrimmed
+              )
+            ) {
+              matchedSpecs = specs;
+              break;
+            }
+          }
+          if (matchedSpecs) break;
+        }
+      }
+
+      if (matchedSpecs && matchedSpecs.length > 0) {
+        const dbWidths = matchedSpecs
+          .map((s) => s.width?.trim())
+          .filter((w): w is string => Boolean(w));
+        if (dbWidths.length > 0) {
+          return Array.from(new Set([...dbWidths, ...defaultWidths]));
+        }
+      }
+
+      return defaultWidths;
+    },
+    [activeModel, dbSpecs]
+  );
+
   return {
     brands,
     getModelsForBrand,
     getCasingsForModel,
     getCompoundsForModel,
+    getWidthsForModel,
     isLoading,
   };
 }
