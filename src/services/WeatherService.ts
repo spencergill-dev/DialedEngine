@@ -24,6 +24,7 @@ export interface GeocodingResult {
   country: string;
   admin1?: string;
   label: string;
+  distanceKm?: number;
 }
 
 export interface TrailLocationPreset {
@@ -220,15 +221,43 @@ export async function reverseGeocode(
 }
 
 /**
- * Search locations using Open-Meteo Geocoding API
+ * Haversine formula to compute great-circle distance between two GPS coordinates in kilometers
  */
-export async function searchLocations(query: string): Promise<GeocodingResult[]> {
+export function calculateDistanceKm(
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): number {
+  const R = 6371; // Earth's mean radius in km
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLon = ((lon2 - lon1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos((lat1 * Math.PI) / 180) *
+      Math.cos((lat2 * Math.PI) / 180) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+}
+
+/**
+ * Search locations using Open-Meteo Geocoding API.
+ * If user coordinates are provided (e.g. GPS is enabled), results are
+ * sorted by proximity with the closest location to the user at the top.
+ */
+export async function searchLocations(
+  query: string,
+  userCoords?: { latitude: number; longitude: number } | null
+): Promise<GeocodingResult[]> {
   const trimmed = query.trim();
   if (trimmed.length < 2) return [];
 
+  // Fetch up to 20 candidate matches so regional locations aren't excluded by Open-Meteo's population bias
   const url = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(
     trimmed
-  )}&count=5&language=en&format=json`;
+  )}&count=20&language=en&format=json`;
 
   const response = await fetch(url);
   if (!response.ok) {
@@ -240,10 +269,40 @@ export async function searchLocations(query: string): Promise<GeocodingResult[]>
     return [];
   }
 
-  return data.results.map((r: any) => {
+  // Resolve user coords from parameter or localStorage fallback
+  let coords = userCoords;
+  if (!coords && typeof window !== "undefined") {
+    try {
+      const savedDevice = localStorage.getItem("dialed_device_coords");
+      if (savedDevice) {
+        coords = JSON.parse(savedDevice);
+      } else {
+        const savedLast = localStorage.getItem("dialed_last_coords");
+        if (savedLast) coords = JSON.parse(savedLast);
+      }
+    } catch {}
+  }
+
+  const results: GeocodingResult[] = data.results.map((r: any) => {
     const parts = [r.name];
     if (r.admin1) parts.push(r.admin1);
     if (r.country) parts.push(r.country);
+
+    let distanceKm: number | undefined;
+    if (
+      coords &&
+      typeof coords.latitude === "number" &&
+      typeof coords.longitude === "number" &&
+      !isNaN(coords.latitude) &&
+      !isNaN(coords.longitude)
+    ) {
+      distanceKm = calculateDistanceKm(
+        coords.latitude,
+        coords.longitude,
+        r.latitude,
+        r.longitude
+      );
+    }
 
     return {
       id: r.id,
@@ -253,8 +312,26 @@ export async function searchLocations(query: string): Promise<GeocodingResult[]>
       country: r.country,
       admin1: r.admin1,
       label: parts.join(", "),
+      distanceKm,
     };
   });
+
+  // If user location is known, sort in ascending order of distance (closest on top)
+  if (
+    coords &&
+    typeof coords.latitude === "number" &&
+    typeof coords.longitude === "number" &&
+    !isNaN(coords.latitude) &&
+    !isNaN(coords.longitude)
+  ) {
+    results.sort((a, b) => {
+      const distA = a.distanceKm ?? Infinity;
+      const distB = b.distanceKm ?? Infinity;
+      return distA - distB;
+    });
+  }
+
+  return results;
 }
 
 /**

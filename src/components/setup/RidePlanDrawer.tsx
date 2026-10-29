@@ -98,6 +98,7 @@ interface RidePlanDrawerProps {
   isLocating?: boolean;
   locationError?: string | null;
   isDeviceLocation?: boolean;
+  userCoords?: LocationCoordinates | null;
 }
 
 export function RidePlanDrawer({
@@ -114,6 +115,7 @@ export function RidePlanDrawer({
   isLocating = false,
   locationError = null,
   isDeviceLocation = false,
+  userCoords = null,
 }: RidePlanDrawerProps) {
   const [activeTab, setActiveTab] = useState<"location" | "time">(initialTab);
   const [customTemp, setCustomTemp] = useState<number>(selectedTimePlan.temperature);
@@ -136,7 +138,7 @@ export function RidePlanDrawer({
     setCustomTemp(selectedTimePlan.temperature);
   }, [selectedTimePlan.temperature]);
 
-  // Debounced geocoding search
+  // Debounced geocoding search with user location proximity sorting
   useEffect(() => {
     const query = searchQuery.trim();
     if (query.length < 2) {
@@ -150,7 +152,7 @@ export function RidePlanDrawer({
       setIsSearching(true);
       setSearchError(null);
       try {
-        const results = await searchLocations(query);
+        const results = await searchLocations(query, userCoords);
         setSearchResults(results);
         if (results.length === 0) {
           setSearchError(`No locations found for "${query}"`);
@@ -163,7 +165,7 @@ export function RidePlanDrawer({
     }, 350);
 
     return () => clearTimeout(timer);
-  }, [searchQuery]);
+  }, [searchQuery, userCoords]);
 
   const handlePresetSelect = (preset: RideTimePlan) => {
     setCustomTemp(preset.temperature);
@@ -473,7 +475,7 @@ export function RidePlanDrawer({
               )}
 
               {searchResults.length > 0 && (
-                <div className="space-y-1.5 p-1 bg-zinc-900/80 rounded-xl border border-zinc-800 max-h-48 overflow-y-auto">
+                <div className="space-y-1.5 p-1 bg-zinc-900/80 rounded-xl border border-zinc-800 max-h-56 overflow-y-auto">
                   {searchResults.map((res) => (
                     <button
                       key={res.id}
@@ -482,10 +484,19 @@ export function RidePlanDrawer({
                       className="w-full px-3 py-2 text-left rounded-lg hover:bg-zinc-800/80 transition-colors flex items-center justify-between text-xs group"
                     >
                       <div className="truncate">
-                        <span className="font-semibold text-white group-hover:text-lime-400 block truncate">
-                          {res.name}
-                        </span>
-                        <span className="text-[10px] text-zinc-400 truncate">
+                        <div className="flex items-center gap-2 truncate">
+                          <span className="font-semibold text-white group-hover:text-lime-400 truncate">
+                            {res.name}
+                          </span>
+                          {res.distanceKm !== undefined && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-lime-400/10 text-lime-400 font-mono font-medium shrink-0">
+                              {res.distanceKm < 1
+                                ? "< 1 km away"
+                                : `${Math.round(res.distanceKm)} km away`}
+                            </span>
+                          )}
+                        </div>
+                        <span className="text-[10px] text-zinc-400 truncate block mt-0.5">
                           {[res.admin1, res.country].filter(Boolean).join(", ")} •{" "}
                           <span className="font-mono">
                             {res.latitude.toFixed(2)}°, {res.longitude.toFixed(2)}°

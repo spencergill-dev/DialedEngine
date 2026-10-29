@@ -119,6 +119,15 @@ export function RideSetupView({
       longitude: PRESET_TRAIL_LOCATIONS[0].longitude,
     };
   });
+  const [deviceCoords, setDeviceCoords] = useState<LocationCoordinates | null>(() => {
+    try {
+      const savedDevice = localStorage.getItem("dialed_device_coords");
+      if (savedDevice) return JSON.parse(savedDevice);
+      const savedLast = localStorage.getItem("dialed_last_coords");
+      if (savedLast) return JSON.parse(savedLast);
+    } catch {}
+    return null;
+  });
   const [isDeviceLocation, setIsDeviceLocation] = useState<boolean>(true);
   const [timePresets, setTimePresets] = useState<RideTimePlan[]>(TIME_PRESETS);
   const [selectedTimePlan, setSelectedTimePlan] = useState<RideTimePlan>(
@@ -197,6 +206,7 @@ export function RideSetupView({
           longitude: pos.longitude,
         };
         setCurrentCoords(coords);
+        setDeviceCoords(coords);
         setIsDeviceLocation(true);
 
         // Reverse geocode to resolve city name and fetch live weather concurrently
@@ -209,6 +219,7 @@ export function RideSetupView({
         try {
           localStorage.setItem("dialed_last_location_name", cityName);
           localStorage.setItem("dialed_last_coords", JSON.stringify(coords));
+          localStorage.setItem("dialed_device_coords", JSON.stringify(coords));
         } catch {}
       } catch (err: any) {
         if (isCancelled) return;
@@ -257,6 +268,7 @@ export function RideSetupView({
         longitude: pos.longitude,
       };
       setCurrentCoords(coords);
+      setDeviceCoords(coords);
       setIsDeviceLocation(true);
 
       const [cityName] = await Promise.all([
@@ -267,6 +279,7 @@ export function RideSetupView({
       try {
         localStorage.setItem("dialed_last_location_name", cityName);
         localStorage.setItem("dialed_last_coords", JSON.stringify(coords));
+        localStorage.setItem("dialed_device_coords", JSON.stringify(coords));
       } catch {}
       toast.success(`Location detected: ${cityName}`);
     } catch (err: any) {
@@ -1098,6 +1111,7 @@ export function RideSetupView({
         isLocating={isLocating}
         locationError={locationError}
         isDeviceLocation={isDeviceLocation}
+        userCoords={deviceCoords || (isDeviceLocation ? _currentCoords : null)}
       />
 
       {/* Quick Edit Bike Dialog */}
