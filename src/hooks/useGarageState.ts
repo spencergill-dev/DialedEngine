@@ -27,7 +27,7 @@ const DEFAULT_BIKES: Bike[] = [
       model: "Minion DHR II",
       width: "2.4 WT",
       casing: "heavy",
-      hasInsert: true,
+      hasInsert: false,
     },
   },
   {
@@ -50,7 +50,7 @@ const DEFAULT_BIKES: Bike[] = [
       model: "Eliminator Grid Gravity",
       width: "2.6",
       casing: "heavy",
-      hasInsert: true,
+      hasInsert: false,
     },
   },
   {

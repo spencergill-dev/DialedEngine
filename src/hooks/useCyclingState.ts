@@ -72,7 +72,7 @@ function mapDbRowToBike(row: any): Bike {
       width: row.rear_tire_width || defaultRearWidth,
       casing: (row.rear_tire_casing as any) || "heavy",
       compound: row.rear_tire_compound || null,
-      hasInsert: true,
+      hasInsert: false,
       isTubeless: true,
     },
   };

@@ -35,6 +35,7 @@ const DEFAULT_FRONT_TIRE: TireSetup = {
   width: "2.5 WT",
   casing: "standard",
   hasInsert: false,
+  isTubeless: true,
 };
 
 const DEFAULT_REAR_TIRE: TireSetup = {
@@ -42,7 +43,8 @@ const DEFAULT_REAR_TIRE: TireSetup = {
   model: "Minion DHR II",
   width: "2.4 WT",
   casing: "heavy",
-  hasInsert: true,
+  hasInsert: false,
+  isTubeless: true,
 };
 
 const TIRE_MANUFACTURERS = [

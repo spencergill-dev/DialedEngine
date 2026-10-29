@@ -6,6 +6,7 @@ export interface TireSetup {
   width: string;
   casing: TireCasing;
   hasInsert: boolean;
+  isTubeless?: boolean;
 }
 
 export interface Bike {

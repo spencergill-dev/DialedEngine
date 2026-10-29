@@ -142,9 +142,35 @@ const DEFAULT_REAR_TIRE: TireSetup = {
   width: "2.4\" WT",
   casing: "heavy",
   compound: "MaxxTerra (3C)",
-  hasInsert: true,
+  hasInsert: false,
   isTubeless: true,
 };
+
+export const STANDARD_REAR_TRAVELS = [
+  100, 115, 120, 125, 130, 135, 140, 145, 150, 155, 160, 165, 170, 180, 200,
+];
+
+export function getEstimatedShockStroke(travelMm: number): number {
+  const strokeMap: Record<number, number> = {
+    100: 40,
+    115: 45,
+    120: 45,
+    125: 47.5,
+    130: 50,
+    135: 50,
+    140: 52.5,
+    145: 55,
+    150: 55,
+    155: 57.5,
+    160: 60,
+    165: 62.5,
+    170: 65,
+    180: 70,
+    200: 75,
+  };
+  if (strokeMap[travelMm]) return strokeMap[travelMm];
+  return Math.round((travelMm / 2.7) * 2) / 2; // round to nearest 0.5mm
+}
 
 export function BikeBuilderDialog({
   open,
@@ -192,6 +218,8 @@ export function BikeBuilderDialog({
   const [shockModel, setShockModel] = useState("Fox Float X2 Factory");
   const [rearShockStroke, setRearShockStroke] = useState<number | string>("");
   const [rearWheelTravel, setRearWheelTravel] = useState<number | string>("");
+  const [isCustomRearTravel, setIsCustomRearTravel] = useState<boolean>(false);
+  const [isStrokeManuallySet, setIsStrokeManuallySet] = useState<boolean>(false);
 
   const [frontTire, setFrontTire] = useState<TireSetup>(DEFAULT_FRONT_TIRE);
   const [rearTire, setRearTire] = useState<TireSetup>(DEFAULT_REAR_TIRE);
@@ -255,8 +283,13 @@ export function BikeBuilderDialog({
       setForkModel(bikeToEdit.forkModel);
       setForkTravel(bikeToEdit.forkTravel);
       setShockModel(bikeToEdit.shockModel);
+      const rwt = bikeToEdit.rearWheelTravel != null ? bikeToEdit.rearWheelTravel : "";
+      setRearWheelTravel(rwt);
+      setIsCustomRearTravel(
+        rwt !== "" && !STANDARD_REAR_TRAVELS.includes(Number(rwt))
+      );
       setRearShockStroke(bikeToEdit.rearShockStroke != null ? bikeToEdit.rearShockStroke : "");
-      setRearWheelTravel(bikeToEdit.rearWheelTravel != null ? bikeToEdit.rearWheelTravel : "");
+      setIsStrokeManuallySet(bikeToEdit.rearShockStroke != null);
       setFrontTire(bikeToEdit.frontTire);
       setRearTire(bikeToEdit.rearTire);
 
@@ -284,13 +317,41 @@ export function BikeBuilderDialog({
       setForkModel("Fox 38 Factory Grip2");
       setForkTravel(170);
       setShockModel("Fox Float X2 Factory");
-      setRearShockStroke(60);
       setRearWheelTravel(160);
+      setRearShockStroke(60);
+      setIsCustomRearTravel(false);
+      setIsStrokeManuallySet(false);
       setFrontTire(DEFAULT_FRONT_TIRE);
       setRearTire(DEFAULT_REAR_TIRE);
       setSameAsFront(false);
     }
   }, [bikeToEdit, open]);
+
+  const handleRearTravelSelect = (val: string) => {
+    if (val === "custom") {
+      setIsCustomRearTravel(true);
+    } else {
+      setIsCustomRearTravel(false);
+      const travelNum = Number(val);
+      setRearWheelTravel(travelNum);
+      if (!isStrokeManuallySet) {
+        setRearShockStroke(getEstimatedShockStroke(travelNum));
+      }
+    }
+  };
+
+  const handleCustomRearTravelChange = (val: string) => {
+    setRearWheelTravel(val);
+    const num = Number(val);
+    if (!isNaN(num) && num > 0 && !isStrokeManuallySet) {
+      setRearShockStroke(getEstimatedShockStroke(num));
+    }
+  };
+
+  const handleShockStrokeChange = (val: string) => {
+    setRearShockStroke(val);
+    setIsStrokeManuallySet(val.trim() !== "");
+  };
 
   // Keep rear tire synchronized in real time when sameAsFront is active
   useEffect(() => {
@@ -1557,42 +1618,93 @@ export function BikeBuilderDialog({
                     </div>
 
                     <div className="space-y-1">
-                      <Label htmlFor="rear-shock-stroke" className="text-[11px] text-zinc-400">
-                        Shock Stroke (mm)
-                      </Label>
-                      <Input
-                        id="rear-shock-stroke"
-                        type="number"
-                        min={30}
-                        max={100}
-                        step={0.5}
-                        value={rearShockStroke}
-                        onChange={(e) => setRearShockStroke(e.target.value)}
-                        placeholder="e.g. 55"
-                        className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm rounded-xl font-mono"
-                      />
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="rear-wheel-travel" className="text-[11px] text-zinc-400">
+                          Rear Wheel Travel
+                        </Label>
+                        {isCustomRearTravel ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsCustomRearTravel(false);
+                              handleRearTravelSelect("150");
+                            }}
+                            className="text-[10px] text-lime-400 hover:text-lime-300 font-sans transition-colors underline"
+                          >
+                            Standard options
+                          </button>
+                        ) : null}
+                      </div>
+
+                      {isCustomRearTravel ? (
+                        <div className="relative">
+                          <Input
+                            id="rear-wheel-travel"
+                            type="number"
+                            min={50}
+                            max={250}
+                            step={1}
+                            value={rearWheelTravel}
+                            onChange={(e) => handleCustomRearTravelChange(e.target.value)}
+                            placeholder="e.g. 150"
+                            className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm rounded-xl font-mono pr-12"
+                          />
+                          <span className="absolute right-3 top-2.5 text-xs text-zinc-500 font-mono pointer-events-none">
+                            mm
+                          </span>
+                        </div>
+                      ) : (
+                        <Select
+                          value={rearWheelTravel !== "" ? String(rearWheelTravel) : ""}
+                          onValueChange={handleRearTravelSelect}
+                        >
+                          <SelectTrigger className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm">
+                            <SelectValue placeholder="Select travel..." />
+                          </SelectTrigger>
+                          <SelectContent className="bg-zinc-900 border-none ring-1 ring-white/10">
+                            {STANDARD_REAR_TRAVELS.map((t) => (
+                              <SelectItem key={t} value={String(t)} className="text-base md:text-sm">
+                                {t} mm
+                              </SelectItem>
+                            ))}
+                            <SelectItem value="custom" className="text-base md:text-sm text-lime-400 font-medium">
+                              Custom / Other mm...
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
                       <p className="text-[10px] text-zinc-500 leading-tight">
-                        Stroke is the shock shaft compression distance (damper travel, e.g. 55mm).
+                        Total rear axle movement over terrain (e.g. 150mm).
                       </p>
                     </div>
 
                     <div className="space-y-1">
-                      <Label htmlFor="rear-wheel-travel" className="text-[11px] text-zinc-400">
-                        Rear Wheel Travel (mm)
-                      </Label>
-                      <Input
-                        id="rear-wheel-travel"
-                        type="number"
-                        min={80}
-                        max={250}
-                        step={1}
-                        value={rearWheelTravel}
-                        onChange={(e) => setRearWheelTravel(e.target.value)}
-                        placeholder="e.g. 150"
-                        className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm rounded-xl font-mono"
-                      />
+                      <div className="flex items-center justify-between">
+                        <Label htmlFor="rear-shock-stroke" className="text-[11px] text-zinc-400">
+                          Shock Stroke (mm)
+                        </Label>
+                        <span className="text-[10px] text-zinc-500 font-mono">
+                          {isStrokeManuallySet ? "Custom stroke" : "Auto (~2.7:1 ratio)"}
+                        </span>
+                      </div>
+                      <div className="relative">
+                        <Input
+                          id="rear-shock-stroke"
+                          type="number"
+                          min={30}
+                          max={100}
+                          step={0.5}
+                          value={rearShockStroke}
+                          onChange={(e) => handleShockStrokeChange(e.target.value)}
+                          placeholder="e.g. 55"
+                          className="h-9 bg-zinc-950 ring-1 ring-white/10 text-base md:text-sm rounded-xl font-mono pr-12"
+                        />
+                        <span className="absolute right-3 top-2.5 text-xs text-zinc-500 font-mono pointer-events-none">
+                          mm
+                        </span>
+                      </div>
                       <p className="text-[10px] text-zinc-500 leading-tight">
-                        Travel is the total rear axle movement driven by frame linkage (e.g. 150mm).
+                        Damper shaft travel (auto-estimated from rear wheel travel).
                       </p>
                     </div>
                   </>
